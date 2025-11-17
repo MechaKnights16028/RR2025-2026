@@ -24,9 +24,9 @@ public class DriveCodeCommon extends LinearOpMode {
         drive.setDrivePowers(new PoseVelocity2d(
                 new Vector2d(
                         -gamepad1.left_stick_y*speed,
-                        gamepad1.left_stick_x*speed
+                        -gamepad1.right_stick_x*speed
                 ),
-                -gamepad1.right_stick_x*speed
+                gamepad1.left_stick_x*speed
         ));
     }
     public void intake(MecanumDrive drive){
