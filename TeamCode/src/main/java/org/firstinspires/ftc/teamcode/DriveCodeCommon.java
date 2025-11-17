@@ -9,6 +9,10 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 @Config
 public class DriveCodeCommon extends LinearOpMode {
 
+    private static final double paddlewaiting= 1.0;
+    private static final double padllecatch = 0.5;
+    private static final double paddlelaunch = 0.0;
+
     double speed = 1.0;
 
     @Override
@@ -36,5 +40,12 @@ public class DriveCodeCommon extends LinearOpMode {
         else {
             drive.intake.setPower(0);
         }
+    }
+    public void holder(MecanumDrive drive){
+        int red = drive.paddle1.red();
+        int blue = drive.paddle1.blue();
+        int green = drive.paddle1.green();
+
+        boolean isPurple =
     }
 }

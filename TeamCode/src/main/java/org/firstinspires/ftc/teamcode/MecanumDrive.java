@@ -32,11 +32,13 @@ import com.acmerobotics.roadrunner.ftc.PositionVelocityPair;
 import com.acmerobotics.roadrunner.ftc.RawEncoder;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
+import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -108,6 +110,8 @@ public final class MecanumDrive {
 
     public final DcMotorEx leftFront, leftBack, rightBack, rightFront;
     public final DcMotor intake;
+    public final Servo paddleOne;
+    public final ColorSensor paddle1;
 
     public final VoltageSensor voltageSensor;
 
@@ -232,6 +236,10 @@ public final class MecanumDrive {
         rightFront = hardwareMap.get(DcMotorEx.class, "rightFront");
 
         intake = hardwareMap.get(DcMotor.class, "intake");
+
+        paddleOne = hardwareMap.get(Servo.class,"paddleOne");
+
+        paddle1 = hardwareMap.get(ColorSensor.class,"paddle1");
 
         leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         leftBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
