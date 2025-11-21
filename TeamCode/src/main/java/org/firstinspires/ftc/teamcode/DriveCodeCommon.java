@@ -9,9 +9,17 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 @Config
 public class DriveCodeCommon extends LinearOpMode {
 
-    private static final double paddlewaiting= 1.0;
-    private static final double padllecatch = 0.5;
-    private static final double paddlelaunch = 0.0;
+    double paddlewaiting = 1.0;
+    double padllecatch = 0.5;
+    double paddlelaunch = 0.0;
+    int PURPLE_RED_MIN = 50;
+    int PURPLE_BLUE_MIN = 50;
+    int PURPLE_GREEN_MAX = 80;
+
+    int GREEN_GREEN_MIN = 80;
+    int GREEN_RED_MAX = 70;
+    int GREEN_BLUE_MAX = 70;
+
 
     double speed = 1.0;
 
@@ -41,11 +49,47 @@ public class DriveCodeCommon extends LinearOpMode {
             drive.intake.setPower(0);
         }
     }
+    public void shooter(MecanumDrive drive){
+        drive.launcher.setPower(1.0);
+    }
     public void holder(MecanumDrive drive){
         int red = drive.paddle1.red();
         int blue = drive.paddle1.blue();
         int green = drive.paddle1.green();
+        boolean detectPurple = false;
+        boolean detectGreen = false;
+        telemetry.addData("red",red);
+        telemetry.addData("green",green);
+        telemetry.addData("blue",blue);
+        telemetry.update();
 
-        boolean isPurple =
-    }
+
+        if(red > PURPLE_RED_MIN &&
+                blue > PURPLE_BLUE_MIN &&
+                green < PURPLE_GREEN_MAX){
+            detectPurple = true;
+        }
+        else {
+            detectPurple = false;
+        }
+
+
+        if(green > GREEN_GREEN_MIN &&
+                red < GREEN_RED_MAX &&
+                blue < GREEN_BLUE_MAX){
+                detectGreen = true;
+            }
+        else {
+            detectGreen = false;
+        }
+
+
+
+        if(detectPurple || detectGreen){
+            drive.paddleOne.setPosition(padllecatch);
+        }
+        else {
+            drive.paddleOne.setPosition(paddlewaiting);
+        }
+}
 }

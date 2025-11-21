@@ -109,7 +109,7 @@ public final class MecanumDrive {
             new ProfileAccelConstraint(PARAMS.minProfileAccel, PARAMS.maxProfileAccel);
 
     public final DcMotorEx leftFront, leftBack, rightBack, rightFront;
-    public final DcMotor intake;
+    public final DcMotor intake, launcher;
     public final Servo paddleOne;
     public final ColorSensor paddle1;
 
@@ -240,12 +240,14 @@ public final class MecanumDrive {
         paddleOne = hardwareMap.get(Servo.class,"paddleOne");
 
         paddle1 = hardwareMap.get(ColorSensor.class,"paddle1");
+        launcher = hardwareMap.get(DcMotor.class,"launcher");
 
         leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         leftBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightFront.setDirection(DcMotorSimple.Direction.REVERSE);
+        launcher.setDirection(DcMotorSimple.Direction.REVERSE);
 
         // TODO: reverse motor directions if needed
         //   leftFront.setDirection(DcMotorSimple.Direction.REVERSE);

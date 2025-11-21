@@ -19,7 +19,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
 @Config
-@Autonomous(name = "BlueAuto", group = "Autonomous")
+@Autonomous(name = "OldBlueAuto", group = "Autonomous")
 public class Old_BlueAuto extends LinearOpMode {
 
     public class IntakeBar{
