@@ -83,9 +83,7 @@ public class DriveCodeCommon extends LinearOpMode {
             detectGreen = false;
         }
 
-
-
-        if(detectPurple || detectGreen){
+        if(detectPurple || detectGreen||gamepad2.dpad_right){
             drive.paddleOne.setPosition(padllecatch);
         }
         else {
