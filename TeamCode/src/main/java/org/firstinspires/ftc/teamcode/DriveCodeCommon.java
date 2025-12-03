@@ -50,7 +50,7 @@ public class DriveCodeCommon extends LinearOpMode {
         }
     }
     public void shooter(MecanumDrive drive){
-        drive.launcher.setPower(1.0);
+        drive.launcher.setPower(-1.0);
     }
     public void holder(MecanumDrive drive){
         int red = drive.paddle1.red();
@@ -83,9 +83,7 @@ public class DriveCodeCommon extends LinearOpMode {
             detectGreen = false;
         }
 
-
-
-        if(detectPurple || detectGreen){
+        if(detectPurple || detectGreen||gamepad2.dpad_right){
             drive.paddleOne.setPosition(padllecatch);
         }
         else {
