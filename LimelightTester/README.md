@@ -88,18 +88,19 @@ Main Menu:
 **Pass criteria:** ≥90% detection rate
 
 ### Test 3: Pipeline Switching
-- Cycles through all 3 pipelines:
-  - Pipeline 0: AprilTag detection
-  - Pipeline 1: Purple ball detection
-  - Pipeline 2: Green ball detection
+- Cycles through all 4 pipelines:
+  - Pipeline 0: Purple ball detection
+  - Pipeline 1: Green ball detection
+  - Pipeline 2: Pillar AprilTag detection (tags 20, 24)
+  - Pipeline 3: Center AprilTag detection (tags 21, 22, 23)
 - Verifies each switch is successful
 
 ### Test 4: Center Tag Sequences
 - Tests center AprilTag (21-23) reading
 - Verifies ball sequence mapping:
-  - Tag 21 → [PURPLE, PURPLE, GREEN]
+  - Tag 21 → [GREEN, PURPLE, PURPLE]
   - Tag 22 → [PURPLE, GREEN, PURPLE]
-  - Tag 23 → [GREEN, PURPLE, PURPLE]
+  - Tag 23 → [PURPLE, PURPLE, GREEN]
 
 ### Test 5: Calibration Tuner
 - Interactively adjust calibration parameters:
@@ -116,12 +117,12 @@ Main Menu:
 
 ## Calibration Constants
 
-Default values (from LimelightVision.java):
-- **Limelight Height:** 8.0 inches
-- **Limelight Angle:** 15.0 degrees
-- **AprilTag Height:** 12.0 inches
+Current values (from LimelightVision.java):
+- **Limelight Height:** 40.0 inches (measured from floor to camera lens center)
+- **Limelight Angle:** 15.0 degrees (positive = angled up)
+- **AprilTag Height:** 36.0 inches (measured from floor to tag center)
 
-**Important:** Use the Calibration Tuner (Test 5) to find accurate values for your robot. Once you find good values, update them in `TeamCode/src/main/java/org/firstinspires/ftc/teamcode/vision/LimelightVision.java`
+**Important:** These values must be accurately measured on your robot for correct distance calculations. Use the Calibration Tuner (Test 5) to validate and adjust values. Once you confirm good values, update them in `TeamCode/src/main/java/org/firstinspires/ftc/teamcode/vision/LimelightVision.java` (lines 56-63).
 
 ## Architecture
 
@@ -153,9 +154,10 @@ If automatic pipeline switching doesn't work (you'll see a message), you can man
 1. Open `http://limelight.local:5801` in your browser
 2. Go to the "Pipeline" tab
 3. Select the desired pipeline:
-   - **Pipeline 0**: AprilTag detection
-   - **Pipeline 1**: Purple ball detection
-   - **Pipeline 2**: Green ball detection
+   - **Pipeline 0**: Purple ball detection
+   - **Pipeline 1**: Green ball detection
+   - **Pipeline 2**: Pillar AprilTag detection (tags 20, 24)
+   - **Pipeline 3**: Center AprilTag detection (tags 21, 22, 23)
 
 The test system will detect which pipeline is active and work accordingly.
 
@@ -177,9 +179,12 @@ The test system will detect which pipeline is active and work accordingly.
 - Ensure AprilTag height is correct (center of tag to floor)
 
 ### Pipeline switching doesn't work
-- Verify pipelines are configured in Limelight web interface
-- Pipeline 0 should be AprilTag detector
-- Pipelines 1 and 2 should be color detectors
+- Verify all 4 pipelines are configured in Limelight web interface:
+  - Pipeline 0: Purple ball color detector
+  - Pipeline 1: Green ball color detector
+  - Pipeline 2: AprilTag detector (for tags 20, 24)
+  - Pipeline 3: AprilTag detector (for tags 21, 22, 23)
+- You can manually switch pipelines via `http://limelight.local:5801`
 
 ## Development
 

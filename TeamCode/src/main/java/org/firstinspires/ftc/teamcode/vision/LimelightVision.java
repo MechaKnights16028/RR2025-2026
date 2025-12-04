@@ -17,21 +17,25 @@ import java.util.List;
  * as well as colored ball detection for autonomous ball collection.
  *
  * Pipeline Configuration:
- * - Pipeline 0: AprilTag detection (tags 20-24)
- * - Pipeline 1: Purple ball color detection
- * - Pipeline 2: Green ball color detection
+ * - Pipeline 0: Purple ball color detection
+ * - Pipeline 1: Green ball color detection
+ * - Pipeline 2: Pillar AprilTag detection (tags 20, 24 ONLY)
+ * - Pipeline 3: Center AprilTag detection (tags 21, 22, 23 ONLY)
  */
 public class LimelightVision {
 
     // ===== PIPELINE CONSTANTS =====
-    /** Pipeline index for AprilTag detection */
-    public static final int PIPELINE_APRILTAG = 0;
-
     /** Pipeline index for purple ball detection */
-    public static final int PIPELINE_PURPLE = 1;
+    public static final int PIPELINE_PURPLE = 0;
 
     /** Pipeline index for green ball detection */
-    public static final int PIPELINE_GREEN = 2;
+    public static final int PIPELINE_GREEN = 1;
+
+    /** Pipeline index for pillar AprilTag detection (tags 20 and 24 ONLY) */
+    public static final int PIPELINE_PILLAR_TAGS = 2;
+
+    /** Pipeline index for center AprilTag detection (tags 21, 22, 23 ONLY) */
+    public static final int PIPELINE_CENTER_TAGS = 3;
 
     // ===== APRILTAG ID CONSTANTS =====
     /** AprilTag ID for left pillar (Blue alliance) */
@@ -50,13 +54,13 @@ public class LimelightVision {
     // TODO: THESE MUST BE CALIBRATED TO YOUR ROBOT!
 
     /** Height of Limelight camera from floor in inches */
-    public static final double LIMELIGHT_HEIGHT_INCHES = 8.0;
+    public static final double LIMELIGHT_HEIGHT_INCHES = 40.0;
 
     /** Angle of Limelight camera tilt in degrees (positive = angled up) */
     public static final double LIMELIGHT_ANGLE_DEGREES = 15.0;
 
     /** Height of AprilTag center from floor in inches */
-    public static final double APRILTAG_HEIGHT_INCHES = 12.0;
+    public static final double APRILTAG_HEIGHT_INCHES = 36.0;
 
     /** Diameter of game balls in inches */
     public static final double BALL_DIAMETER_INCHES = 3.0;
@@ -92,31 +96,43 @@ public class LimelightVision {
         this.telemetry = telemetry;
         this.ballSequence = new ArrayList<>();
         this.currentBallIndex = 0;
-        this.currentPipeline = PIPELINE_APRILTAG;
+        this.currentPipeline = PIPELINE_PILLAR_TAGS;
 
         // Initialize Limelight hardware
         this.limelight = hardwareMap.get(Limelight3A.class, name);
 
-        // Set initial pipeline to AprilTag detection
-        limelight.pipelineSwitch(PIPELINE_APRILTAG);
+        // Set initial pipeline to pillar AprilTag detection
+        limelight.pipelineSwitch(PIPELINE_PILLAR_TAGS);
 
         // Start Limelight polling
         limelight.start();
 
-        telemetry.addData("LimelightVision", "Initialized on pipeline " + PIPELINE_APRILTAG);
+        telemetry.addData("LimelightVision", "Initialized on pipeline " + PIPELINE_PILLAR_TAGS);
     }
 
     // ===== PIPELINE SWITCHING METHODS =====
 
     /**
-     * Switches the Limelight to the AprilTag detection pipeline.
-     * Use this when detecting pillar tags (20, 24) or center tags (21-23).
+     * Switches the Limelight to the pillar AprilTag detection pipeline.
+     * Use this when detecting pillar tags (20, 24) for alliance-based targeting.
      */
-    public void switchToAprilTagPipeline() {
-        if (currentPipeline != PIPELINE_APRILTAG) {
-            limelight.pipelineSwitch(PIPELINE_APRILTAG);
-            currentPipeline = PIPELINE_APRILTAG;
-            telemetry.addData("LimelightVision", "Switched to AprilTag pipeline");
+    public void switchToPillarTagPipeline() {
+        if (currentPipeline != PIPELINE_PILLAR_TAGS) {
+            limelight.pipelineSwitch(PIPELINE_PILLAR_TAGS);
+            currentPipeline = PIPELINE_PILLAR_TAGS;
+            telemetry.addData("LimelightVision", "Switched to pillar AprilTag pipeline");
+        }
+    }
+
+    /**
+     * Switches the Limelight to the center AprilTag detection pipeline.
+     * Use this when reading center tags (21, 22, 23) for ball sequence detection.
+     */
+    public void switchToCenterTagPipeline() {
+        if (currentPipeline != PIPELINE_CENTER_TAGS) {
+            limelight.pipelineSwitch(PIPELINE_CENTER_TAGS);
+            currentPipeline = PIPELINE_CENTER_TAGS;
+            telemetry.addData("LimelightVision", "Switched to center AprilTag pipeline");
         }
     }
 
@@ -143,7 +159,7 @@ public class LimelightVision {
     /**
      * Gets the currently active pipeline index.
      *
-     * @return The current pipeline index (0=AprilTag, 1=Purple, 2=Green)
+     * @return The current pipeline index (0=Purple, 1=Green, 2=PillarTags, 3=CenterTags)
      */
     public int getCurrentPipeline() {
         return currentPipeline;
@@ -159,8 +175,8 @@ public class LimelightVision {
      * @return VisionTarget containing tag data, or noTarget() if tag not visible
      */
     public VisionTarget getPillarTarget(boolean isRedAlliance) {
-        // Switch to AprilTag pipeline
-        switchToAprilTagPipeline();
+        // Switch to pillar AprilTag pipeline
+        switchToPillarTagPipeline();
 
         // Determine which tag to look for
         int targetTagId = isRedAlliance ? APRILTAG_RIGHT_PILLAR : APRILTAG_LEFT_PILLAR;
@@ -217,15 +233,15 @@ public class LimelightVision {
     /**
      * Reads the center AprilTag (21-23) to determine the ball collection sequence.
      * Maps tag IDs to ball collection order:
-     * - Tag 21: [PURPLE, PURPLE, GREEN]
+     * - Tag 21: [GREEN, PURPLE, PURPLE]
      * - Tag 22: [PURPLE, GREEN, PURPLE]
-     * - Tag 23: [GREEN, PURPLE, PURPLE]
+     * - Tag 23: [PURPLE, PURPLE, GREEN]
      *
      * @return List of BallColor in collection order, or empty list if no center tag found
      */
     public List<BallColor> readCenterAprilTag() {
-        // Switch to AprilTag pipeline
-        switchToAprilTagPipeline();
+        // Switch to center AprilTag pipeline
+        switchToCenterTagPipeline();
 
         // Get latest Limelight results
         LLResult result = limelight.getLatestResult();

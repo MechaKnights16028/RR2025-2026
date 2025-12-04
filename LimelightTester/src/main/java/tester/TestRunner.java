@@ -254,51 +254,66 @@ public class TestRunner {
 
     private void testPipelineSwitching() {
         System.out.println("\n========== Pipeline Switching Test ==========");
-        System.out.println("This test cycles through all 3 pipelines.");
+        System.out.println("This test cycles through all 4 pipelines.");
+        System.out.println("  Pipeline 0: Purple ball detection");
+        System.out.println("  Pipeline 1: Green ball detection");
+        System.out.println("  Pipeline 2: Pillar AprilTags (20, 24)");
+        System.out.println("  Pipeline 3: Center AprilTags (21, 22, 23)");
 
         boolean allSuccess = true;
 
-        // Test AprilTag pipeline
-        System.out.println("\nSwitching to Pipeline 0 (AprilTag)...");
-        limelight.switchToAprilTagPipeline();
+        // Test Purple pipeline (0)
+        System.out.println("\nSwitching to Pipeline 0 (Purple balls)...");
+        limelight.switchToBallPipeline(BallColor.PURPLE);
         try { Thread.sleep(500); } catch (InterruptedException e) {}
         if (limelight.getCurrentPipeline() == 0) {
             System.out.println("✓ Pipeline 0: SUCCESS");
         } else {
-            System.out.println("✗ Pipeline 0: FAILED");
+            System.out.println("✗ Pipeline 0: FAILED (expected 0, got " + limelight.getCurrentPipeline() + ")");
             allSuccess = false;
         }
 
-        // Test Purple pipeline
-        System.out.println("\nSwitching to Pipeline 1 (Purple)...");
-        limelight.switchToBallPipeline(BallColor.PURPLE);
+        // Test Green pipeline (1)
+        System.out.println("\nSwitching to Pipeline 1 (Green balls)...");
+        limelight.switchToBallPipeline(BallColor.GREEN);
         try { Thread.sleep(500); } catch (InterruptedException e) {}
         if (limelight.getCurrentPipeline() == 1) {
             System.out.println("✓ Pipeline 1: SUCCESS");
         } else {
-            System.out.println("✗ Pipeline 1: FAILED");
+            System.out.println("✗ Pipeline 1: FAILED (expected 1, got " + limelight.getCurrentPipeline() + ")");
             allSuccess = false;
         }
 
-        // Test Green pipeline
-        System.out.println("\nSwitching to Pipeline 2 (Green)...");
-        limelight.switchToBallPipeline(BallColor.GREEN);
+        // Test Pillar AprilTag pipeline (2)
+        System.out.println("\nSwitching to Pipeline 2 (Pillar AprilTags)...");
+        limelight.switchToPillarTagPipeline();
         try { Thread.sleep(500); } catch (InterruptedException e) {}
         if (limelight.getCurrentPipeline() == 2) {
             System.out.println("✓ Pipeline 2: SUCCESS");
         } else {
-            System.out.println("✗ Pipeline 2: FAILED");
+            System.out.println("✗ Pipeline 2: FAILED (expected 2, got " + limelight.getCurrentPipeline() + ")");
             allSuccess = false;
         }
 
-        // Return to AprilTag
-        System.out.println("\nReturning to Pipeline 0 (AprilTag)...");
-        limelight.switchToAprilTagPipeline();
+        // Test Center AprilTag pipeline (3)
+        System.out.println("\nSwitching to Pipeline 3 (Center AprilTags)...");
+        limelight.switchToCenterTagPipeline();
+        try { Thread.sleep(500); } catch (InterruptedException e) {}
+        if (limelight.getCurrentPipeline() == 3) {
+            System.out.println("✓ Pipeline 3: SUCCESS");
+        } else {
+            System.out.println("✗ Pipeline 3: FAILED (expected 3, got " + limelight.getCurrentPipeline() + ")");
+            allSuccess = false;
+        }
+
+        // Return to default pillar tag pipeline
+        System.out.println("\nReturning to Pipeline 2 (Pillar AprilTags)...");
+        limelight.switchToPillarTagPipeline();
         try { Thread.sleep(500); } catch (InterruptedException e) {}
 
         System.out.println("\n--- Pipeline Switching Results ---");
         if (allSuccess) {
-            System.out.println("Result: PASS (all pipelines switched successfully)");
+            System.out.println("Result: PASS (all 4 pipelines switched successfully)");
         } else {
             System.out.println("Result: FAIL (one or more pipelines failed to switch)");
         }
@@ -313,9 +328,9 @@ public class TestRunner {
         System.out.println("\n========== Center Tag Sequence Test ==========");
         System.out.println("This test verifies center tag → ball sequence mapping.");
         System.out.println("\nExpected Mappings:");
-        System.out.println("  Tag 21 → [PURPLE, PURPLE, GREEN]");
+        System.out.println("  Tag 21 → [GREEN, PURPLE, PURPLE]");
         System.out.println("  Tag 22 → [PURPLE, GREEN, PURPLE]");
-        System.out.println("  Tag 23 → [GREEN, PURPLE, PURPLE]");
+        System.out.println("  Tag 23 → [PURPLE, PURPLE, GREEN]");
 
         System.out.println("\nShow center tag 21, 22, or 23 to the camera.");
         System.out.println("Press Enter to read tag (or 'q' to quit)");
@@ -334,11 +349,11 @@ public class TestRunner {
 
                 // Verify correctness based on known mappings
                 String result = "UNKNOWN";
-                if (sequence.equals(List.of(BallColor.PURPLE, BallColor.PURPLE, BallColor.GREEN))) {
+                if (sequence.equals(List.of(BallColor.GREEN, BallColor.PURPLE, BallColor.PURPLE))) {
                     result = "Tag 21 detected - CORRECT";
                 } else if (sequence.equals(List.of(BallColor.PURPLE, BallColor.GREEN, BallColor.PURPLE))) {
                     result = "Tag 22 detected - CORRECT";
-                } else if (sequence.equals(List.of(BallColor.GREEN, BallColor.PURPLE, BallColor.PURPLE))) {
+                } else if (sequence.equals(List.of(BallColor.PURPLE, BallColor.PURPLE, BallColor.GREEN))) {
                     result = "Tag 23 detected - CORRECT";
                 }
 

@@ -9,18 +9,40 @@ The LimelightTester module tests your **ACTUAL** robot vision code by using **EX
 
 ## Files That Must Stay In Sync
 
-### Critical: Distance Calculation Formula
+### Critical: Pipeline Constants
 
 **TeamCode Location:**
 ```
 TeamCode/src/main/java/org/firstinspires/ftc/teamcode/vision/LimelightVision.java
-Lines 305-322: calculateDistance() method
+Lines 28-38: Pipeline configuration constants
 ```
 
 **Test Location:**
 ```
 LimelightTester/src/main/java/tester/RealVisionWrapper.java
-Lines 198-217: calculateDistance() method
+Lines 25-35: Pipeline configuration constants
+```
+
+**Pipeline Configuration:**
+```java
+PIPELINE_PURPLE = 0;        // Purple ball detection
+PIPELINE_GREEN = 1;         // Green ball detection
+PIPELINE_PILLAR_TAGS = 2;   // Pillar AprilTags (20, 24)
+PIPELINE_CENTER_TAGS = 3;   // Center AprilTags (21, 22, 23)
+```
+
+### Critical: Distance Calculation Formula
+
+**TeamCode Location:**
+```
+TeamCode/src/main/java/org/firstinspires/ftc/teamcode/vision/LimelightVision.java
+Lines 321-338: calculateDistance() method
+```
+
+**Test Location:**
+```
+LimelightTester/src/main/java/tester/RealVisionWrapper.java
+Lines 216-233: calculateDistance() method
 ```
 
 **Formula:**
@@ -32,33 +54,60 @@ distance = (targetHeight - limelightHeight) / Math.tan(Math.toRadians(limelightA
 
 **TeamCode Location:**
 ```
-LimelightVision.java lines 52-59:
-- LIMELIGHT_HEIGHT_INCHES = 8.0
+LimelightVision.java lines 56-63:
+- LIMELIGHT_HEIGHT_INCHES = 40.0
 - LIMELIGHT_ANGLE_DEGREES = 15.0
-- APRILTAG_HEIGHT_INCHES = 12.0
+- APRILTAG_HEIGHT_INCHES = 36.0
 ```
 
 **Test Location:**
 ```
-RealVisionWrapper.java lines 25-27:
+RealVisionWrapper.java lines 43-50:
 Same constants
 ```
+
+**IMPORTANT:** These values must be measured on your robot. The Limelight height is measured from the floor to the camera lens center. The AprilTag height is measured from the floor to the center of the AprilTag.
 
 ### Important: Vision Logic
 
 **TeamCode Location:**
 ```
 LimelightVision.java:
-- getPillarTarget() - lines 161-215
-- readCenterAprilTag() - lines 226-289
+- getPillarTarget() - lines 177-231
+- readCenterAprilTag() - lines 233-305
+- switchToPillarTagPipeline() - lines 119-125
+- switchToCenterTagPipeline() - lines 131-137
 ```
 
 **Test Location:**
 ```
 RealVisionWrapper.java:
-- getPillarTarget() - lines 75-124
-- readCenterAprilTag() - lines 132-166
+- getPillarTarget() - lines 104-150
+- readCenterAprilTag() - lines 160-206
+- switchToPillarTagPipeline() - lines 65-70
+- switchToCenterTagPipeline() - lines 76-81
 ```
+
+### Critical: Ball Sequence Mapping
+
+**AprilTag to Ball Sequence:**
+```
+Tag 21 → [GREEN, PURPLE, PURPLE]
+Tag 22 → [PURPLE, GREEN, PURPLE]
+Tag 23 → [PURPLE, PURPLE, GREEN]
+```
+
+**TeamCode Location:**
+```
+LimelightVision.java lines 266-287: Ball sequence switch statement
+```
+
+**Test Location:**
+```
+RealVisionWrapper.java lines 177-199: Ball sequence switch statement
+```
+
+**IMPORTANT:** This mapping determines the order in which balls are collected during autonomous. Any change to this mapping must be updated in both files.
 
 ## How to Keep in Sync
 
@@ -75,15 +124,15 @@ RealVisionWrapper.java:
 If you update `LIMELIGHT_HEIGHT_INCHES` in TeamCode:
 
 ```java
-// TeamCode/vision/LimelightVision.java:52
-public static final double LIMELIGHT_HEIGHT_INCHES = 10.0;  // Changed from 8.0
+// TeamCode/vision/LimelightVision.java:57
+public static final double LIMELIGHT_HEIGHT_INCHES = 42.0;  // Changed from 40.0
 ```
 
 You **MUST** update RealVisionWrapper:
 
 ```java
-// LimelightTester/RealVisionWrapper.java:25
-public static final double LIMELIGHT_HEIGHT_INCHES = 10.0;  // Changed from 8.0
+// LimelightTester/RealVisionWrapper.java:44
+public static final double LIMELIGHT_HEIGHT_INCHES = 42.0;  // Changed from 40.0
 ```
 
 Then rebuild:
