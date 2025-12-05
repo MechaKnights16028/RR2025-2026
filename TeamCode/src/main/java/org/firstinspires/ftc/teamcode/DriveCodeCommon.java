@@ -10,8 +10,8 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 public class DriveCodeCommon extends LinearOpMode {
 
     double paddlewaiting = 1.0;
-    double padllecatch = 0.5;
-    double paddlelaunch = 0.0;
+    double padllecatch = 0.0;
+    double paddlelaunch = -1.0;
     int PURPLE_RED_MIN = 50;
     int PURPLE_BLUE_MIN = 50;
     int PURPLE_GREEN_MAX = 80;
@@ -44,13 +44,19 @@ public class DriveCodeCommon extends LinearOpMode {
     public void intake(MecanumDrive drive){
         if(gamepad2.right_bumper){
             drive.intake.setPower(1.0);
-        }
-        else {
+        } else if (gamepad2.left_bumper) {
+            drive.intake.setPower(-1.0);
+        } else {
             drive.intake.setPower(0);
         }
     }
     public void shooter(MecanumDrive drive){
-        drive.launcher.setPower(-1.0);
+        if(gamepad2.left_trigger > 0.5){
+            drive.launcher.setPower(-1.0);
+        }
+        else {
+            drive.launcher.setPower(0.0);
+        }
     }
     public void holder(MecanumDrive drive){
         int red = drive.paddle1.red();
@@ -85,9 +91,18 @@ public class DriveCodeCommon extends LinearOpMode {
 
         if(detectPurple || detectGreen||gamepad2.dpad_right){
             drive.paddleOne.setPosition(padllecatch);
+        } else if (gamepad2.dpad_up) {
+            drive.paddleOne.setPosition(paddlelaunch);
+        } else {
+            drive.paddleOne.setPosition(paddlewaiting);
+        }
+        if(detectPurple || detectGreen||gamepad2.dpad_left){
+            drive.paddleTwo.setPosition(padllecatch);
+        }else if (gamepad2.dpad_down) {
+            drive.paddleTwo.setPosition(paddlelaunch);
         }
         else {
-            drive.paddleOne.setPosition(paddlewaiting);
+            drive.paddleTwo.setPosition(paddlewaiting);
         }
 }
 }

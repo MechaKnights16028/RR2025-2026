@@ -110,7 +110,7 @@ public final class MecanumDrive {
 
     public final DcMotorEx leftFront, leftBack, rightBack, rightFront;
     public final DcMotor intake, launcher;
-    public final Servo paddleOne;
+    public final Servo paddleOne, paddleTwo;
     public final ColorSensor paddle1;
 
     public final VoltageSensor voltageSensor;
@@ -238,8 +238,10 @@ public final class MecanumDrive {
         intake = hardwareMap.get(DcMotor.class, "intake");
 
         paddleOne = hardwareMap.get(Servo.class,"paddleOne");
+        paddleTwo = hardwareMap.get(Servo.class,"paddleTwo");
 
         paddle1 = hardwareMap.get(ColorSensor.class,"paddle1");
+
         launcher = hardwareMap.get(DcMotor.class,"launcher");
 
         leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -248,6 +250,10 @@ public final class MecanumDrive {
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightFront.setDirection(DcMotorSimple.Direction.REVERSE);
         launcher.setDirection(DcMotorSimple.Direction.REVERSE);
+        leftBack.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        leftFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rightBack.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rightFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         // TODO: reverse motor directions if needed
         //   leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
