@@ -109,9 +109,9 @@ public final class MecanumDrive {
             new ProfileAccelConstraint(PARAMS.minProfileAccel, PARAMS.maxProfileAccel);
 
     public final DcMotorEx leftFront, leftBack, rightBack, rightFront;
-    public final DcMotor intake, launcher;
+    /*public final DcMotor intake, launcher;
     public final Servo paddleOne, paddleTwo;
-    public final ColorSensor paddle1;
+    public final ColorSensor paddle1;*/
 
     public final VoltageSensor voltageSensor;
 
@@ -235,21 +235,21 @@ public final class MecanumDrive {
         rightBack = hardwareMap.get(DcMotorEx.class, "rightBack");
         rightFront = hardwareMap.get(DcMotorEx.class, "rightFront");
 
-        intake = hardwareMap.get(DcMotor.class, "intake");
+        /*intake = hardwareMap.get(DcMotor.class, "intake");
 
         paddleOne = hardwareMap.get(Servo.class,"paddleOne");
         paddleTwo = hardwareMap.get(Servo.class,"paddleTwo");
 
         paddle1 = hardwareMap.get(ColorSensor.class,"paddle1");
 
-        launcher = hardwareMap.get(DcMotor.class,"launcher");
+        launcher = hardwareMap.get(DcMotor.class,"launcher");*/
 
         leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         leftBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightFront.setDirection(DcMotorSimple.Direction.REVERSE);
-        launcher.setDirection(DcMotorSimple.Direction.REVERSE);
+        //launcher.setDirection(DcMotorSimple.Direction.REVERSE);
         leftBack.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         leftFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         rightBack.setMode(DcMotor.RunMode.RUN_USING_ENCODER);

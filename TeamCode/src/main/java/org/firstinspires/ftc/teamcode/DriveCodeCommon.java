@@ -11,7 +11,7 @@ public class DriveCodeCommon extends LinearOpMode {
 
     double paddlewaiting = 1.0;
     double padllecatch = 0.0;
-    double paddlelaunch = -1.0;
+    double paddlelaunch = -0.5;
     int PURPLE_RED_MIN = 50;
     int PURPLE_BLUE_MIN = 50;
     int PURPLE_GREEN_MAX = 80;
@@ -41,7 +41,7 @@ public class DriveCodeCommon extends LinearOpMode {
                 gamepad1.left_stick_x*speed
         ));
     }
-    public void intake(MecanumDrive drive){
+    /*public void intake(MecanumDrive drive){
         if(gamepad2.right_bumper){
             drive.intake.setPower(1.0);
         } else if (gamepad2.left_bumper) {
@@ -52,7 +52,7 @@ public class DriveCodeCommon extends LinearOpMode {
     }
     public void shooter(MecanumDrive drive){
         if(gamepad2.left_trigger > 0.5){
-            drive.launcher.setPower(-1.0);
+            drive.launcher.setPower(-0.75);
         }
         else {
             drive.launcher.setPower(0.0);
@@ -104,5 +104,5 @@ public class DriveCodeCommon extends LinearOpMode {
         else {
             drive.paddleTwo.setPosition(paddlewaiting);
         }
-}
+}*/
 }
