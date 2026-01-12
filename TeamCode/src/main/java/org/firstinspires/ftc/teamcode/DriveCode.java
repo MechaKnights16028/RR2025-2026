@@ -12,9 +12,9 @@ public class DriveCode extends DriveCodeCommon {
 
         while (opModeIsActive()) {
             drives(drive);
-            intake(drive);
-            holder(drive);
-            shooter(drive);
+            //intake(drive);
+            //holder(drive);
+            //shooter(drive);
         }
     }
 }
