@@ -41,23 +41,26 @@ public class DriveCodeCommon extends LinearOpMode {
                 gamepad1.left_stick_x*speed
         ));
     }
-    /*public void intake(MecanumDrive drive){
+    public void intake(MecanumDrive drive){
         if(gamepad2.right_bumper){
-            drive.intake.setPower(1.0);
+            drive.intakeOne.setPower(1.0);
         } else if (gamepad2.left_bumper) {
-            drive.intake.setPower(-1.0);
+            drive.intakeTwo.setPower(1.0);
         } else {
-            drive.intake.setPower(0);
+            drive.intakeOne.setPower(0);
+            drive.intakeTwo.setPower(0);
         }
     }
     public void shooter(MecanumDrive drive){
         if(gamepad2.left_trigger > 0.5){
-            drive.launcher.setPower(-0.75);
+            drive.launcherOne.setPower(1.0);
+            drive.intakeTwo.setPower(-1.0);
         }
         else {
-            drive.launcher.setPower(0.0);
+            drive.launcherOne.setPower(0.0);
+            drive.intakeTwo.setPower(0.0);
         }
-    }
+    }/*
     public void holder(MecanumDrive drive){
         int red = drive.paddle1.red();
         int blue = drive.paddle1.blue();

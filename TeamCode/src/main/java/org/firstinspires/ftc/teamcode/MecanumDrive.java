@@ -32,6 +32,7 @@ import com.acmerobotics.roadrunner.ftc.PositionVelocityPair;
 import com.acmerobotics.roadrunner.ftc.RawEncoder;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -109,9 +110,9 @@ public final class MecanumDrive {
             new ProfileAccelConstraint(PARAMS.minProfileAccel, PARAMS.maxProfileAccel);
 
     public final DcMotorEx leftFront, leftBack, rightBack, rightFront;
-    /*public final DcMotor intake, launcher;
-    public final Servo paddleOne, paddleTwo;
-    public final ColorSensor paddle1;*/
+    public final DcMotorEx launcherOne,launcherTwo;
+    public final CRServo intakeOne, intakeTwo;
+    //public final ColorSensor paddle1;*/
 
     public final VoltageSensor voltageSensor;
 
@@ -235,14 +236,13 @@ public final class MecanumDrive {
         rightBack = hardwareMap.get(DcMotorEx.class, "rightBack");
         rightFront = hardwareMap.get(DcMotorEx.class, "rightFront");
 
-        /*intake = hardwareMap.get(DcMotor.class, "intake");
 
-        paddleOne = hardwareMap.get(Servo.class,"paddleOne");
-        paddleTwo = hardwareMap.get(Servo.class,"paddleTwo");
+        intakeOne = hardwareMap.get(CRServo.class,"intakeOne");
+        intakeTwo = hardwareMap.get(CRServo.class,"intakeTwo");
 
-        paddle1 = hardwareMap.get(ColorSensor.class,"paddle1");
 
-        launcher = hardwareMap.get(DcMotor.class,"launcher");*/
+        launcherOne = hardwareMap.get(DcMotorEx.class,"launcherOne");
+        launcherTwo = hardwareMap.get(DcMotorEx.class, "launcherTwo");
 
         leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         leftBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
