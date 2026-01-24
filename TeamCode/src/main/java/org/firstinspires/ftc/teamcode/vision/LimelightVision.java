@@ -25,71 +25,117 @@ import java.util.List;
 public class LimelightVision {
 
     // ===== PIPELINE CONSTANTS =====
-    /** Pipeline index for purple ball detection */
+    /**
+     * Pipeline index for purple ball detection
+     */
     public static final int PIPELINE_PURPLE = 0;
 
-    /** Pipeline index for green ball detection */
+    /**
+     * Pipeline index for green ball detection
+     */
     public static final int PIPELINE_GREEN = 1;
 
-    /** Pipeline index for pillar AprilTag detection (tags 20 and 24 ONLY) */
+    /**
+     * Pipeline index for pillar AprilTag detection (tags 20 and 24 ONLY)
+     */
     public static final int PIPELINE_PILLAR_TAGS = 2;
 
-    /** Pipeline index for center AprilTag detection (tags 21, 22, 23 ONLY) */
+    /**
+     * Pipeline index for center AprilTag detection (tags 21, 22, 23 ONLY)
+     */
     public static final int PIPELINE_CENTER_TAGS = 3;
 
+    /**
+     * Pipeline index for whiteline detection
+     */
+    public static final int PIPELINE_WHITELINE = 5;
+
     // ===== APRILTAG ID CONSTANTS =====
-    /** AprilTag ID for left pillar (Blue alliance) */
+    /**
+     * AprilTag ID for left pillar (Blue alliance)
+     */
     public static final int APRILTAG_LEFT_PILLAR = 20;
 
-    /** AprilTag ID for right pillar (Red alliance) */
+    /**
+     * AprilTag ID for right pillar (Red alliance)
+     */
     public static final int APRILTAG_RIGHT_PILLAR = 24;
 
-    /** First center AprilTag ID (determines ball sequence) */
+    /**
+     * First center AprilTag ID (determines ball sequence)
+     */
     public static final int APRILTAG_CENTER_START = 21;
 
-    /** Last center AprilTag ID (determines ball sequence) */
+    /**
+     * Last center AprilTag ID (determines ball sequence)
+     */
     public static final int APRILTAG_CENTER_END = 23;
 
     // ===== PHYSICAL MEASUREMENT CONSTANTS =====
     // TODO: THESE MUST BE CALIBRATED TO YOUR ROBOT!
 
-    /** Height of Limelight camera from floor in inches */
+    /**
+     * Height of Limelight camera from floor in inches
+     */
     public static final double LIMELIGHT_HEIGHT_INCHES = 40.0;
 
-    /** Angle of Limelight camera tilt in degrees (positive = angled up) */
+    /**
+     * Angle of Limelight camera tilt in degrees (positive = angled up)
+     */
     public static final double LIMELIGHT_ANGLE_DEGREES = 15.0;
 
-    /** Height of AprilTag center from floor in inches */
+    /**
+     * Height of AprilTag center from floor in inches
+     */
     public static final double APRILTAG_HEIGHT_INCHES = 36.0;
 
-    /** Diameter of game balls in inches */
+    /**
+     * Height of whiteline from floor in inches (floor level
+     */
+    public static final double WHITELINE_HEIGHT_INCHES = 0.0;
+
+    /**
+     * Diameter of game balls in inches
+     */
     public static final double BALL_DIAMETER_INCHES = 3.0;
 
     // ===== INSTANCE FIELDS =====
-    /** The Limelight3A hardware device */
+    /**
+     * The Limelight3A hardware device
+     */
     private final Limelight3A limelight;
 
-    /** Device name from hardware configuration */
+    /**
+     * Device name from hardware configuration
+     */
     private final String limelightName;
 
-    /** Currently active pipeline index */
+    /**
+     * Currently active pipeline index
+     */
     private int currentPipeline;
 
-    /** Ball collection sequence determined from center AprilTag */
+    /**
+     * Ball collection sequence determined from center AprilTag
+     */
     private List<BallColor> ballSequence;
 
-    /** Current index in ball sequence */
+    /**
+     * Current index in ball sequence
+     */
     private int currentBallIndex;
 
-    /** Telemetry for debugging output */
+    /**
+     * Telemetry for debugging output
+     */
     private final Telemetry telemetry;
 
     /**
      * Creates a new LimelightVision instance.
      *
      * @param hardwareMap The robot's hardware map
-     * @param name The name of the Limelight in the robot configuration
-     * @param telemetry Telemetry for debug output
+     * @param name        The name of the Limelight in the robot configuration
+     * @param telemetry   Telemetry for debug output
      */
     public LimelightVision(HardwareMap hardwareMap, String name, Telemetry telemetry) {
         this.limelightName = name;
@@ -148,13 +194,28 @@ public class LimelightVision {
         }
 
         int targetPipeline = (color == BallColor.PURPLE) ? PIPELINE_PURPLE : PIPELINE_GREEN;
+        if(currentPipeline != targetPipeline)
 
-        if (currentPipeline != targetPipeline) {
+        {
             limelight.pipelineSwitch(targetPipeline);
-            currentPipeline = targetPipeline;
-            telemetry.addData("LimelightVision", "Switched to " + color + " ball pipeline");
+            currentPipeline =targetPipeline;
+            telemetry.addData("LimelightVision","Switched to "+color +" ball pipeline");
         }
     }
+
+    /**
+     * Switches the Limelight to the whiteline detection pipeline
+     * Use this when detecting whitelines on the field
+     */
+    public void switchToWhitelinePipeline() {
+        if (currentPipeline != PIPELINE_WHITELINE) {
+            limelight.pipelineSwitch(PIPELINE_WHITELINE);
+            currentPipeline = PIPELINE_WHITELINE;
+            telemetry.addData("LimelightVision", "Switched to whiteline pipeline");
+        }
+    }
+
+
 
     /**
      * Gets the currently active pipeline index.
@@ -252,6 +313,7 @@ public class LimelightVision {
             return new ArrayList<>();
         }
 
+
         // Get fiducial (AprilTag) results
         List<LLResultTypes.FiducialResult> fiducialResults = result.getFiducialResults();
 
@@ -302,6 +364,61 @@ public class LimelightVision {
         currentBallIndex = 0;
         telemetry.addData("Center Tag", "Not found");
         return new ArrayList<>();
+    }
+    /**
+     * Detects whiteline and calculates distance to it.
+     * Uses floor-level height (0.0 inches) for distance calculation.
+     *
+     * @return VisionTarget containing whiteline data, or noTarget() if line not visible
+     */
+    public VisionTarget getWhitelineTarget(){
+        // Switch to whiteline detection pipeline
+        switchToWhitelinePipeline();
+
+        //Get latest Limelight results
+        LLResult result = limelight.getLatestResult();
+
+        if (result == null || !result.isValid()){
+            return VisionTarget.noTarget();
+        }
+        // Get color detector results (whiteline uses detector, not fiducials)
+        List<LLResultTypes.ColorResult> colorResults = result.getColorResults();
+
+        if (colorResults.isEmpty()){
+            // no whiteline detected
+            return VisionTarget.noTarget();
+        }
+        // use first/largest detection
+        LLResultTypes.ColorResult whitelineDetection = colorResults.get(0);
+
+        double tx = whitelineDetection.getTargetXDegrees();
+        double ty = whitelineDetection.getTargetYDegrees();
+        double ta = whitelineDetection.getTargetArea();
+
+        // calculate distance using whiteline at floor level
+        double distance = calculateDistance(ty, WHITELINE_HEIGHT_INCHES,
+                LIMELIGHT_HEIGHT_INCHES,
+                LIMELIGHT_ANGLE_DEGREES);
+
+        // calculate angle to target
+        double angleToTarget = calculateAngleRadians(tx);
+
+        // normalize screen coordinates (-1 to 1)
+        double targetX = tx / 29.8; // limelight FOV is +/- 29.8 degrees horizontal
+        double targetY = ty / 24.85; // limelight FOV is +/- 24.85 degrees vertical
+
+        // create and return VisionTarget
+        return new VisionTarget(
+                TargetType.NONE, //no specific WHITELINE type, use NONE
+                tx, ty, ta,
+                distance,
+                angleToTarget,
+                targetX, targetY,
+                -1,      //no apriltag ID
+                BallColor.NONE,   //No ball color
+                true,
+                System.currentTimeMillis()
+        );
     }
 
     // ===== BALL DETECTION METHODS =====
