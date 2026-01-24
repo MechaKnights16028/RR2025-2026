@@ -43,9 +43,9 @@ public class DriveCodeCommon extends LinearOpMode {
     }
     public void intake(MecanumDrive drive){
         if(gamepad2.right_bumper){
-            drive.intakeOne.setPower(1.0);
+            drive.intakeOne.setPower(-1.0);
         } else if (gamepad2.left_bumper) {
-            drive.intakeTwo.setPower(1.0);
+            drive.intakeTwo.setPower(-1.0);
         } else {
             drive.intakeOne.setPower(0);
             drive.intakeTwo.setPower(0);
