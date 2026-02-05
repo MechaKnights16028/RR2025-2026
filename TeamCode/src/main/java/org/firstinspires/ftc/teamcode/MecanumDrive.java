@@ -111,7 +111,7 @@ public final class MecanumDrive {
 
     public final DcMotorEx leftFront, leftBack, rightBack, rightFront;
     public final DcMotorEx launcherOne,launcherTwo;
-    public final CRServo intakeOne, intakeTwo;
+    public final CRServo intakeOne, intakeTwo, pusherWheel;
     //public final ColorSensor paddle1;*/
 
     public final VoltageSensor voltageSensor;
@@ -243,6 +243,8 @@ public final class MecanumDrive {
 
         launcherOne = hardwareMap.get(DcMotorEx.class,"launcherOne");
         launcherTwo = hardwareMap.get(DcMotorEx.class, "launcherTwo");
+
+        pusherWheel = hardwareMap.get(CRServo.class, "pusherwheel" );
 
         leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         leftBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
