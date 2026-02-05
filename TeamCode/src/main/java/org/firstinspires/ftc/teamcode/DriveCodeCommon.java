@@ -57,7 +57,7 @@ public class DriveCodeCommon extends LinearOpMode {
         drive.launcherOne.setPower(gamepad2.right_trigger);
         drive.launcherTwo.setPower(gamepad2.left_trigger);
         if (gamepad2.left_trigger > 0.1 || gamepad2.right_trigger > 0.1){
-            drive.pusherWheel.setPower(1.0);
+            drive.pusherWheel.setPower(-1.0);
         }
         else {
             drive.pusherWheel.setPower(0.0);
