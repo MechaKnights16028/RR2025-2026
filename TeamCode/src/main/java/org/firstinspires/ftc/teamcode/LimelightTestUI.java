@@ -215,8 +215,6 @@ public class LimelightTestUI extends LinearOpMode {
 
         // Main loop
         while (opModeIsActive()) {
-            updateButtonStates();
-
             switch (currentState) {
                 case MAIN_MENU:
                     handleMainMenu();
@@ -249,6 +247,7 @@ public class LimelightTestUI extends LinearOpMode {
                     break;
             }
 
+            updateButtonStates();  // Update at end of loop for next iteration
             sleep(50);  // 20 Hz update rate
         }
 
@@ -427,8 +426,28 @@ public class LimelightTestUI extends LinearOpMode {
      * Handle input in test results state
      */
     private void handleTestResults() {
-        // A or B button: Return to main menu
-        if (buttonPressed(gamepad1.a, lastA) || buttonPressed(gamepad1.b, lastB)) {
+        // A button: Rerun the test
+        if (buttonPressed(gamepad1.a, lastA)) {
+            // Determine if test needs alliance selection
+            switch (selectedTestIndex) {
+                case 0:  // Test 1: Distance Calculation - needs alliance and distance
+                    currentState = UIState.ALLIANCE_SELECT;
+                    break;
+                case 1:  // Test 2: Detection Reliability - needs alliance
+                case 5:  // Test 6: Run All Tests - needs alliance
+                case 4:  // Test 5: Calibration Tuner - needs alliance
+                    currentState = UIState.ALLIANCE_SELECT;
+                    break;
+                case 2:  // Test 3: Pipeline Switching - run immediately
+                case 3:  // Test 4: Center Tag Sequences - run immediately
+                    currentState = UIState.TEST_RUNNING;
+                    startTest(selectedTestIndex);
+                    break;
+            }
+        }
+
+        // B button: Return to main menu
+        if (buttonPressed(gamepad1.b, lastB)) {
             currentState = UIState.MAIN_MENU;
         }
 
@@ -564,7 +583,7 @@ public class LimelightTestUI extends LinearOpMode {
         }
 
         telemetry.addLine();
-        telemetry.addLine("A or B=Return to Menu");
+        telemetry.addLine("A=Rerun Test | B=Main Menu");
         telemetry.update();
     }
 

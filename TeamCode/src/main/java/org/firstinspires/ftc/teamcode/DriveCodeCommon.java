@@ -22,6 +22,8 @@ public class DriveCodeCommon extends LinearOpMode {
 
 
     double speed = 1.0;
+//Alliance selection method
+    protected boolean isRedAlliance = false;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -128,6 +130,16 @@ public class DriveCodeCommon extends LinearOpMode {
         }
         else {
             drive.paddleTwo.setPosition(paddlewaiting);
+        }*/
+    //alliance selection method
+    public void allianceSelect(){
+        if (gamepad1.dpad_left){
+            isRedAlliance = false;
         }
-}*/
+        if (gamepad1.dpad_right){
+            isRedAlliance = true;
+        }
+        telemetry.addData("Alliance",isRedAlliance ? "Red" : "Blue");
+        telemetry.addLine("Press LEFT for BLUE, RIGHT for RED");
+    }
 }

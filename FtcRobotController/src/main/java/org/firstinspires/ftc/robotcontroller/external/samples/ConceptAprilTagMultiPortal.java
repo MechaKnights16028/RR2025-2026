@@ -75,7 +75,7 @@ public class ConceptAprilTagMultiPortal extends LinearOpMode
 
         // Now we build both portals. The CRITICAL thing to notice here is the call to
         // setLiveViewContainerId(), where we pass in the IDs we received earlier from
-        // makeMultiPortalView().
+        // makeMultiPortalView().Wh
         portal1 = new VisionPortal.Builder()
                 .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"))
                 .setLiveViewContainerId(portal1ViewId)

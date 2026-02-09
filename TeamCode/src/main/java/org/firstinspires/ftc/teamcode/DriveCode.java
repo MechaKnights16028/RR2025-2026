@@ -8,6 +8,11 @@ public class DriveCode extends DriveCodeCommon {
     @Override
     public void runOpMode() {
         MecanumDrive drive = new MecanumDrive(hardwareMap, new Pose2d(0, 0, 0));
+        //Alliance selection during INIT phase
+        while (!isStarted() && !isStopRequested()){
+            allianceSelect();
+            telemetry.update();
+        }
         waitForStart();
 
         while (opModeIsActive()) {

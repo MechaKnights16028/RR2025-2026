@@ -8,7 +8,7 @@ import java.util.Scanner;
 /**
  * Main test application for Limelight vision system.
  * Tests with EXACT COPY of LimelightVision.java formulas.
- *
+
  * NOTE: RealVisionWrapper contains line-by-line copies of the distance
  * calculation and vision logic from TeamCode. Any changes to LimelightVision.java
  * MUST be reflected in RealVisionWrapper.java!
@@ -238,6 +238,7 @@ public class TestRunner {
             System.out.println("Average Distance: " + String.format("%.2f", avgDistance) + " inches");
             System.out.println("Distance Range: " + String.format("%.2f", minDistance) + " - " +
                     String.format("%.2f", maxDistance) + " inches");
+
         }
 
         if (detectionRate >= 90) {

@@ -36,6 +36,8 @@ public class RealVisionWrapper {
 
     public static final int APRILTAG_LEFT_PILLAR = 20;
     public static final int APRILTAG_RIGHT_PILLAR = 24;
+    /** white line detection*/
+    public static final int PIPELINE_WHITELINE = 5;
     public static final int APRILTAG_CENTER_START = 21;
     public static final int APRILTAG_CENTER_END = 23;
 
@@ -62,6 +64,8 @@ public class RealVisionWrapper {
      * Switches the Limelight to the pillar AprilTag detection pipeline.
      * Use this when detecting pillar tags (20, 24) for alliance-based targeting.
      */
+    /**line is on the ground*/
+    public static final double WHITELINE_HEIGHT_INCHES = 0.0;
     public void switchToPillarTagPipeline() {
         if (currentPipeline != PIPELINE_PILLAR_TAGS) {
             httpClient.switchPipeline(PIPELINE_PILLAR_TAGS);
@@ -149,6 +153,14 @@ public class RealVisionWrapper {
         return VisionTarget.noTarget();
     }
 
+    /** whiteline switch to*/
+    public void switchToWhiteLinePipeline(){
+        if (currentPipeline != PIPELINE_WHITELINE){
+            limelight.pipelineSwitch(PIPELINE_WHITELINE);
+            currentPipeline = PIPELINE_WHITELINE;
+            telementry.addData("LimelightVision","Switched to whiteline pipeline");
+        }
+    }
     /**
      * EXACT COPY of LimelightVision.readCenterAprilTag()
      * Maps tag IDs to ball collection order:
