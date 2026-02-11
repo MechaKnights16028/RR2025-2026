@@ -36,7 +36,7 @@ public class DriveCodeCommon extends LinearOpMode {
         drive.setDrivePowers(new PoseVelocity2d(
                 new Vector2d(
                         -gamepad1.left_stick_y*speed,
-                        -gamepad1.left_stick_x*speed
+                        gamepad1.left_stick_x*speed
                 ),
                 gamepad1.right_stick_x*speed
         ));
@@ -65,8 +65,8 @@ public class DriveCodeCommon extends LinearOpMode {
             drive.launcherTwo.setPower(1.0);
         }
         else {
-            drive.launcherOne.setPower(0.5);
-            drive.launcherTwo.setPower(1.0);
+            drive.launcherOne.setPower(0.0);
+            drive.launcherTwo.setPower(0.0);
         }
         if (gamepad2.left_trigger > 0.1 || gamepad2.right_trigger > 0.1){
             drive.pusherWheel.setPower(-1.0);
