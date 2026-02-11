@@ -54,8 +54,20 @@ public class DriveCodeCommon extends LinearOpMode {
         }
     }
     public void shooter(MecanumDrive drive){
-        drive.launcherOne.setPower(gamepad2.right_trigger);
-        drive.launcherTwo.setPower(gamepad2.left_trigger);
+        //drive.launcherOne.setPower(gamepad2.right_trigger);
+        //drive.launcherTwo.setPower(gamepad2.left_trigger);
+        if (gamepad2.right_trigger > 0.5){
+            drive.launcherOne.setPower(1.0);
+            drive.launcherTwo.setPower(0.5);
+        }
+        else if(gamepad2.left_trigger > 0.5){
+            drive.launcherOne.setPower(0.5);
+            drive.launcherTwo.setPower(1.0);
+        }
+        else {
+            drive.launcherOne.setPower(0.5);
+            drive.launcherTwo.setPower(1.0);
+        }
         if (gamepad2.left_trigger > 0.1 || gamepad2.right_trigger > 0.1){
             drive.pusherWheel.setPower(-1.0);
         }
