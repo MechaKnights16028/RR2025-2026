@@ -156,9 +156,9 @@ public class RealVisionWrapper {
     /** whiteline switch to*/
     public void switchToWhiteLinePipeline(){
         if (currentPipeline != PIPELINE_WHITELINE){
-            limelight.pipelineSwitch(PIPELINE_WHITELINE);
+            httpClient.switchPipeline(PIPELINE_WHITELINE);
             currentPipeline = PIPELINE_WHITELINE;
-            telementry.addData("LimelightVision","Switched to whiteline pipeline");
+            System.out.println("LimelightVision: Switched to whiteline pipeline");
         }
     }
     /**
