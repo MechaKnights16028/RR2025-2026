@@ -2,7 +2,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-
+import org.firstinspires.ftc.teamcode.vision.LimelightVision;
 @TeleOp
 public class DriveCode extends DriveCodeCommon {
     @Override
@@ -14,12 +14,21 @@ public class DriveCode extends DriveCodeCommon {
             telemetry.update();
         }
         waitForStart();
+        LimelightVision limelight = new LimelightVision(hardwareMap, "limelight",
+                telemetry);
 
         while (opModeIsActive()) {
-            drives(drive);
+            if (gamepad1.a || gamepad1.b) {
+                autoAlign(drive, limelight);
+            } else {
+                drives(drive);
+            }
             intake(drive);
             //holder(drive);
             shooter(drive);
+            visionTelemetry(limelight, drive.blinkin);
+            telemetry.update();
         }
+
     }
 }

@@ -41,6 +41,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
+import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
@@ -113,6 +114,8 @@ public final class MecanumDrive {
     public final DcMotorEx launcherOne,launcherTwo;
     public final CRServo intakeOne, intakeTwo, pusherWheel;
     //public final ColorSensor paddle1;*/
+
+    public final RevBlinkinLedDriver blinkin;
 
     public final VoltageSensor voltageSensor;
 
@@ -243,6 +246,8 @@ public final class MecanumDrive {
 
         launcherOne = hardwareMap.get(DcMotorEx.class,"launcherOne");
         launcherTwo = hardwareMap.get(DcMotorEx.class, "launcherTwo");
+
+        blinkin = hardwareMap.get(RevBlinkinLedDriver.class, "blinkin");
 
         pusherWheel = hardwareMap.get(CRServo.class, "pusherwheel" );
 

@@ -5,6 +5,10 @@ import com.acmerobotics.roadrunner.PoseVelocity2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
+
+import org.firstinspires.ftc.teamcode.vision.LimelightVision;
+import org.firstinspires.ftc.teamcode.vision.VisionTarget;
 
 @Config
 public class DriveCodeCommon extends LinearOpMode {
@@ -19,6 +23,13 @@ public class DriveCodeCommon extends LinearOpMode {
     int GREEN_GREEN_MIN = 80;
     int GREEN_RED_MAX = 70;
     int GREEN_BLUE_MAX = 70;
+
+    public static double IDEAL_SHOOT_DISTANCE = 48.0;
+    public static double DISTANCE_TOLERANCE = 3.0;
+    public static double ANGLE_TOLERANCE = 2.0;
+    public static double ALIGN_ROTATE_GAIN = 0.02;
+    public static double ALIGN_DRIVE_GAIN = 0.03;
+    public static double ALIGN_MAX_POWER = 0.4;
 
 
     double speed = 1.0;
@@ -94,7 +105,6 @@ public class DriveCodeCommon extends LinearOpMode {
         telemetry.addData("red",red);
         telemetry.addData("green",green);
         telemetry.addData("blue",blue);
-        telemetry.update();
 
 
         if(red > PURPLE_RED_MIN &&
@@ -142,4 +152,48 @@ public class DriveCodeCommon extends LinearOpMode {
         telemetry.addData("Alliance",isRedAlliance ? "Red" : "Blue");
         telemetry.addLine("Press LEFT for BLUE, RIGHT for RED");
     }
+
+    public void visionTelemetry(LimelightVision limelight, RevBlinkinLedDriver
+            blinkin) {
+        telemetry.addData("Alliance", isRedAlliance ? "RED" : "BLUE");
+
+        VisionTarget pillarTag = limelight.getPillarTarget(isRedAlliance);
+
+        if (pillarTag.isTargetFound()) {
+            double distance = pillarTag.getDistance();
+            double angleDegrees = Math.toDegrees(pillarTag.getAngleToTarget());
+
+            boolean distanceOk = Math.abs(distance - IDEAL_SHOOT_DISTANCE) <=
+                    DISTANCE_TOLERANCE;
+            boolean angleOk = Math.abs(angleDegrees) <= ANGLE_TOLERANCE;
+            boolean inRange = distanceOk && angleOk;
+
+            String direction;
+            if (angleDegrees > 1.0) {
+                direction = String.format("%.1f\u00B0 right", angleDegrees);
+            } else if (angleDegrees < -1.0) {
+                direction = String.format("%.1f\u00B0 left",
+                        Math.abs(angleDegrees));
+            } else {
+                direction = "CENTERED";
+            }
+
+            telemetry.addData("Pillar", "VISIBLE");
+            telemetry.addData("Distance", "%.1f in (target: %.1f)", distance,
+                    IDEAL_SHOOT_DISTANCE);
+            telemetry.addData("Direction", direction);
+            telemetry.addData("Status", inRange ? ">>> IN RANGE <<<" : "OUT OF RANGE");
+
+            if (inRange) {
+                blinkin.setPattern(RevBlinkinLedDriver.BlinkinPattern.GREEN);
+            } else {
+                blinkin.setPattern(RevBlinkinLedDriver.BlinkinPattern.RED);
+            }
+        } else {
+            telemetry.addData("Pillar", "NOT VISIBLE");
+            telemetry.addData("Status", "Searching...");
+            blinkin.setPattern(RevBlinkinLedDriver.BlinkinPattern.BLUE);
+        }
+    }
+
 }

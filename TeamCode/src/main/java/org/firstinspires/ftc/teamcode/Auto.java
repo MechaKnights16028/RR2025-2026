@@ -33,7 +33,7 @@ public class Auto extends LinearOpMode {
 
     public void runOpMode(){
         //alliance selection variable
-        boolean isRedAlliance = false;
+    boolean isRedAlliance = false;
 
         //Alliance selection during INIT phase
         while (!isStarted() && !isStopRequested()){
@@ -98,9 +98,21 @@ public class Auto extends LinearOpMode {
         //now create the drive with refined pose
         MecanumDrive drive = new MecanumDrive(hardwareMap, initialPose);
 
-        Action moveOutOfStart = (drive.actionBuilder(initialPose))
-                .lineToX(70)
-                .build();
+        //create turn action based on alliance
+        Action moveOutOfStart;
+        if (isRedAlliance){
+            //Red alliance: turn LEFT 90 degrees
+            moveOutOfStart = drive.actionBuilder(initialPose)
+                    .turn(Math.toRadians(-90))
+                    .build();
+        }
+        else {
+            //Blue alliance: turn RIGHT 90 degress
+            moveOutOfStart = drive.actionBuilder(initialPose)
+                    .turn(Math.toRadians(-90))
+                    .build();
+        }
+
         waitForStart();
         if (isStopRequested()) return;
         Actions.runBlocking(
