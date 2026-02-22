@@ -91,8 +91,7 @@ public class Auto extends LinearOpMode {
         telemetry.addData("Final X", "%.2f", initialPose.position.x);
         telemetry.addData("Final Y", "%.2f", initialPose.position.y);
         telemetry.update();
-        sleep(2000); //show refined position for 2 seconds
-
+        sleep(2000); //show refined position for 2 second
         limelight.stop(); //clean up limelight before auto starts
 
         //now create the drive with refined pose

@@ -5,8 +5,7 @@ package org.firstinspires.ftc.teamcode.vision;
  * Contains both raw Limelight data (tx, ty, ta) and calculated values (distance, angle).
  */
 public class VisionTarget {
-    private final TargetType type;
-    private final double tx;              // Horizontal offset in degrees
+    private final TargetType type;    private final double tx;              // Horizontal offset in degrees
     private final double ty;              // Vertical offset in degrees
     private final double ta;              // Target area as % of image
     private final double distance;        // Calculated distance to target (inches)
