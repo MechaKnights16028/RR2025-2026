@@ -24,7 +24,7 @@ public class DriveCodeCommon extends LinearOpMode {
     int GREEN_RED_MAX = 70;
     int GREEN_BLUE_MAX = 70;
 
-    public static double IDEAL_SHOOT_DISTANCE = 48.0;
+    public static double IDEAL_SHOOT_DISTANCE = 109.0;
     public static double DISTANCE_TOLERANCE = 3.0;
     public static double ANGLE_TOLERANCE = 2.0;
     public static double ALIGN_ROTATE_GAIN = 0.02;
