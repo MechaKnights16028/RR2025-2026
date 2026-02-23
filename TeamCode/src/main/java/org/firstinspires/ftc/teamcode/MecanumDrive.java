@@ -258,6 +258,11 @@ public final class MecanumDrive {
         rightBack.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         rightFront.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
+        launcherOne.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        launcherTwo.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        launcherTwo.setDirection(DcMotorEx.Direction.REVERSE);
+
         // TODO: reverse motor directions if needed
         //   leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
 /*
