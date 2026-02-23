@@ -30,6 +30,7 @@ public class DriveCodeCommon extends LinearOpMode {
     public static double ALIGN_ROTATE_GAIN = 0.02;
     public static double ALIGN_DRIVE_GAIN = 0.03;
     public static double ALIGN_MAX_POWER = 0.4;
+    public static double SEARCH_SPIN_POWER = 0.25;
 
 
     double speed = 1.0;
@@ -95,7 +96,51 @@ public class DriveCodeCommon extends LinearOpMode {
             drive.launcherOne.setPower(0.0);
             drive.intakeTwo.setPower(0.0);
         }*/
-    }/*
+    }
+
+    public void autoAlign(MecanumDrive drive, LimelightVision limelight) {
+        VisionTarget pillarTag = limelight.getPillarTarget(isRedAlliance);
+
+        if (!pillarTag.isTargetFound()) {
+            if (gamepad1.a) {
+                // Spin toward alliance pillar side to search for tag
+                double searchDirection = isRedAlliance ? -SEARCH_SPIN_POWER :
+                        SEARCH_SPIN_POWER;
+                drive.setDrivePowers(new PoseVelocity2d(new Vector2d(0, 0),
+                        searchDirection));
+                telemetry.addData("Auto-align", "SEARCHING...");
+            } else {
+                drive.setDrivePowers(new PoseVelocity2d(new Vector2d(0, 0), 0));
+            }
+            return;
+        }
+
+        double distance = pillarTag.getDistance();
+        double angleDegrees = Math.toDegrees(pillarTag.getAngleToTarget());
+
+        double rotatePower = 0;
+        double drivePower = 0;
+
+        if (gamepad1.a) {
+            rotatePower = angleDegrees * ALIGN_ROTATE_GAIN;
+            rotatePower = Math.max(-ALIGN_MAX_POWER, Math.min(ALIGN_MAX_POWER,
+                    rotatePower));
+        }
+
+        if (gamepad1.b) {
+            double distanceError = distance - IDEAL_SHOOT_DISTANCE;
+            drivePower = distanceError * ALIGN_DRIVE_GAIN;
+            drivePower = Math.max(-ALIGN_MAX_POWER, Math.min(ALIGN_MAX_POWER,
+                    drivePower));
+        }
+
+        drive.setDrivePowers(new PoseVelocity2d(
+                new Vector2d(drivePower, 0),
+                rotatePower
+        ));
+    }
+
+    /*
     public void holder(MecanumDrive drive){
         int red = drive.paddle1.red();
         int blue = drive.paddle1.blue();
