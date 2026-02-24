@@ -77,17 +77,17 @@ public class LimelightVision {
     /**
      * Height of Limelight camera from floor in inches
      */
-    public static final double LIMELIGHT_HEIGHT_INCHES = 40.0;
+    public static final double LIMELIGHT_HEIGHT_INCHES = 12.5;
 
     /**
      * Angle of Limelight camera tilt in degrees (positive = angled up)
      */
-    public static final double LIMELIGHT_ANGLE_DEGREES = 15.0;
+    public static final double LIMELIGHT_ANGLE_DEGREES = 0.0;
 
     /**
      * Height of AprilTag center from floor in inches
      */
-    public static final double APRILTAG_HEIGHT_INCHES = 36.0;
+    public static final double APRILTAG_HEIGHT_INCHES = 29.5;
 
     /**
      * Height of whiteline from floor in inches (floor level

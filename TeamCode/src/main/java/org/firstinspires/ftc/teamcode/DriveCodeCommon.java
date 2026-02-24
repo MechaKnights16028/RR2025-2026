@@ -24,11 +24,11 @@ public class DriveCodeCommon extends LinearOpMode {
     int GREEN_RED_MAX = 70;
     int GREEN_BLUE_MAX = 70;
 
-    public static double IDEAL_SHOOT_DISTANCE = 109.0;
+    public static double IDEAL_SHOOT_DISTANCE = 62.0;
     public static double DISTANCE_TOLERANCE = 3.0;
     public static double ANGLE_TOLERANCE = 2.0;
     public static double ALIGN_ROTATE_GAIN = 0.02;
-    public static double ALIGN_DRIVE_GAIN = 0.03;
+    public static double ALIGN_DRIVE_GAIN = 0.06;
     public static double ALIGN_MAX_POWER = 0.4;
     public static double SEARCH_SPIN_POWER = 0.25;
 
@@ -103,11 +103,8 @@ public class DriveCodeCommon extends LinearOpMode {
 
         if (!pillarTag.isTargetFound()) {
             if (gamepad1.a) {
-                // Spin toward alliance pillar side to search for tag
-                double searchDirection = isRedAlliance ? -SEARCH_SPIN_POWER :
-                        SEARCH_SPIN_POWER;
-                drive.setDrivePowers(new PoseVelocity2d(new Vector2d(0, 0),
-                        searchDirection));
+                double searchDirection = isRedAlliance ? -SEARCH_SPIN_POWER : SEARCH_SPIN_POWER;
+                drive.setDrivePowers(new PoseVelocity2d(new Vector2d(0, 0), searchDirection));
                 telemetry.addData("Auto-align", "SEARCHING...");
             } else {
                 drive.setDrivePowers(new PoseVelocity2d(new Vector2d(0, 0), 0));
@@ -122,16 +119,26 @@ public class DriveCodeCommon extends LinearOpMode {
         double drivePower = 0;
 
         if (gamepad1.a) {
-            rotatePower = angleDegrees * ALIGN_ROTATE_GAIN;
-            rotatePower = Math.max(-ALIGN_MAX_POWER, Math.min(ALIGN_MAX_POWER,
-                    rotatePower));
+            if (Math.abs(angleDegrees) > ANGLE_TOLERANCE) {
+                rotatePower = -angleDegrees * ALIGN_ROTATE_GAIN;
+                if (Math.abs(rotatePower) < 0.15) {
+                    rotatePower = Math.copySign(0.15, rotatePower);
+                }
+                rotatePower = Math.max(-ALIGN_MAX_POWER, Math.min(ALIGN_MAX_POWER, rotatePower));
+            }
+            telemetry.addData("Angle error", "%.1f deg", angleDegrees);
         }
 
         if (gamepad1.b) {
             double distanceError = distance - IDEAL_SHOOT_DISTANCE;
-            drivePower = distanceError * ALIGN_DRIVE_GAIN;
-            drivePower = Math.max(-ALIGN_MAX_POWER, Math.min(ALIGN_MAX_POWER,
-                    drivePower));
+            if (Math.abs(distanceError) > DISTANCE_TOLERANCE) {
+                drivePower = distanceError * ALIGN_DRIVE_GAIN;
+                if (Math.abs(drivePower) < 0.15) {
+                    drivePower = Math.copySign(0.15, drivePower);
+                }
+                drivePower = Math.max(-ALIGN_MAX_POWER, Math.min(ALIGN_MAX_POWER, drivePower));
+            }
+            telemetry.addData("Distance error", "%.1f in", distanceError);
         }
 
         drive.setDrivePowers(new PoseVelocity2d(
@@ -198,8 +205,7 @@ public class DriveCodeCommon extends LinearOpMode {
         telemetry.addLine("Press LEFT for BLUE, RIGHT for RED");
     }
 
-    public void visionTelemetry(LimelightVision limelight, RevBlinkinLedDriver
-            blinkin) {
+    public void visionTelemetry(LimelightVision limelight) {
         telemetry.addData("Alliance", isRedAlliance ? "RED" : "BLUE");
 
         VisionTarget pillarTag = limelight.getPillarTarget(isRedAlliance);
@@ -229,15 +235,15 @@ public class DriveCodeCommon extends LinearOpMode {
             telemetry.addData("Direction", direction);
             telemetry.addData("Status", inRange ? ">>> IN RANGE <<<" : "OUT OF RANGE");
 
-            if (inRange) {
-                blinkin.setPattern(RevBlinkinLedDriver.BlinkinPattern.GREEN);
-            } else {
-                blinkin.setPattern(RevBlinkinLedDriver.BlinkinPattern.RED);
-            }
+            //if (inRange) {
+                //blinkin.setPattern(RevBlinkinLedDriver.BlinkinPattern.GREEN);
+            //} else {
+                //blinkin.setPattern(RevBlinkinLedDriver.BlinkinPattern.RED);
+            //}
         } else {
             telemetry.addData("Pillar", "NOT VISIBLE");
             telemetry.addData("Status", "Searching...");
-            blinkin.setPattern(RevBlinkinLedDriver.BlinkinPattern.BLUE);
+            //blinkin.setPattern(RevBlinkinLedDriver.BlinkinPattern.BLUE);
         }
     }
 

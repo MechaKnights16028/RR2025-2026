@@ -26,7 +26,7 @@ public class DriveCode extends DriveCodeCommon {
             intake(drive);
             //holder(drive);
             shooter(drive);
-            visionTelemetry(limelight, drive.blinkin);
+            visionTelemetry(limelight);
             telemetry.update();
         }
 
