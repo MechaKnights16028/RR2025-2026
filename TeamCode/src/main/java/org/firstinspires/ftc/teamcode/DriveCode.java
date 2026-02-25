@@ -8,6 +8,8 @@ public class DriveCode extends DriveCodeCommon {
     @Override
     public void runOpMode() {
         MecanumDrive drive = new MecanumDrive(hardwareMap, new Pose2d(0, 0, 0));
+        PID_Tune tuner1 = new PID_Tune();
+        PID_Tune2 tuner2 = new PID_Tune2();
         //Alliance selection during INIT phase
         while (!isStarted() && !isStopRequested()){
             allianceSelect();
@@ -25,7 +27,7 @@ public class DriveCode extends DriveCodeCommon {
             }
             intake(drive);
             //holder(drive);
-            shooter(drive);
+            shooter(drive,tuner1,tuner2);
             visionTelemetry(limelight);
             telemetry.update();
         }
