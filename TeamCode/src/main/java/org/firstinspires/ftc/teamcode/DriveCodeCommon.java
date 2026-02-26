@@ -120,13 +120,14 @@ public class DriveCodeCommon extends LinearOpMode {
 
         if (gamepad1.a) {
             if (Math.abs(angleDegrees) > ANGLE_TOLERANCE) {
-                rotatePower = -angleDegrees * ALIGN_ROTATE_GAIN;
+                rotatePower = angleDegrees * ALIGN_ROTATE_GAIN;
                 if (Math.abs(rotatePower) < 0.15) {
                     rotatePower = Math.copySign(0.15, rotatePower);
                 }
                 rotatePower = Math.max(-ALIGN_MAX_POWER, Math.min(ALIGN_MAX_POWER, rotatePower));
             }
             telemetry.addData("Angle error", "%.1f deg", angleDegrees);
+            telemetry.addData("Rotate power", "%.3f", rotatePower);
         }
 
         if (gamepad1.b) {
