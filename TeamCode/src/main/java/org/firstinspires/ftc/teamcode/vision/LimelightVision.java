@@ -82,7 +82,7 @@ public class LimelightVision {
     /**
      * Angle of Limelight camera tilt in degrees (positive = angled up)
      */
-    public static final double LIMELIGHT_ANGLE_DEGREES = 17.0;
+    public static final double LIMELIGHT_ANGLE_DEGREES = -17.0;
 
     /**
      * Height of AprilTag center from floor in inches

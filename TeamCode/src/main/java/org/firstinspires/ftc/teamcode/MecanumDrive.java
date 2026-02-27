@@ -113,9 +113,8 @@ public final class MecanumDrive {
     public final DcMotorEx leftFront, leftBack, rightBack, rightFront;
     public final DcMotorEx launcherOne,launcherTwo;
     public final CRServo intakeOne, intakeTwo, pusherWheel;
-    //public final ColorSensor paddle1;*/
 
-    //public final RevBlinkinLedDriver blinkin;
+    public final RevBlinkinLedDriver blinkin;
 
     public final VoltageSensor voltageSensor;
 
@@ -247,7 +246,7 @@ public final class MecanumDrive {
         launcherOne = hardwareMap.get(DcMotorEx.class,"launcherOne");
         launcherTwo = hardwareMap.get(DcMotorEx.class, "launcherTwo");
 
-        //blinkin = hardwareMap.get(RevBlinkinLedDriver.class, "blinkin");
+        blinkin = hardwareMap.get(RevBlinkinLedDriver.class, "blinkin");
 
         pusherWheel = hardwareMap.get(CRServo.class, "pusherwheel" );
 

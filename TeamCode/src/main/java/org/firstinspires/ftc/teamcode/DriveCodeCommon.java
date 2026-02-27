@@ -24,13 +24,13 @@ public class DriveCodeCommon extends LinearOpMode {
     int GREEN_RED_MAX = 70;
     int GREEN_BLUE_MAX = 70;
 
-    public static double IDEAL_SHOOT_DISTANCE = 100.0;
+    public static double IDEAL_SHOOT_DISTANCE = 90.0;
     public static double DISTANCE_TOLERANCE = 3.0;
     public static double ANGLE_TOLERANCE = 2.0;
     public static double ALIGN_ROTATE_GAIN = 0.03;
     public static double ALIGN_DRIVE_GAIN = 0.06;
     public static double ALIGN_MAX_POWER = 0.6;
-    public static double SEARCH_SPIN_POWER = 0.4;
+    public static double SEARCH_SPIN_POWER = 0.6;
 
 
     double speed = 1.0;
@@ -206,7 +206,7 @@ public class DriveCodeCommon extends LinearOpMode {
         telemetry.addLine("Press LEFT for BLUE, RIGHT for RED");
     }
 
-    public void visionTelemetry(LimelightVision limelight) {
+    public void visionTelemetry(MecanumDrive drive, LimelightVision limelight) {
         telemetry.addData("Alliance", isRedAlliance ? "RED" : "BLUE");
 
         VisionTarget pillarTag = limelight.getPillarTarget(isRedAlliance);
@@ -236,11 +236,11 @@ public class DriveCodeCommon extends LinearOpMode {
             telemetry.addData("Direction", direction);
             telemetry.addData("Status", inRange ? ">>> IN RANGE <<<" : "OUT OF RANGE");
 
-            //if (inRange) {
-                //blinkin.setPattern(RevBlinkinLedDriver.BlinkinPattern.GREEN);
-            //} else {
-                //blinkin.setPattern(RevBlinkinLedDriver.BlinkinPattern.RED);
-            //}
+            if (inRange) {
+                drive.blinkin.setPattern(RevBlinkinLedDriver.BlinkinPattern.GREEN);
+            } else {
+                drive.blinkin.setPattern(RevBlinkinLedDriver.BlinkinPattern.RED);
+            }
         } else {
             telemetry.addData("Pillar", "NOT VISIBLE");
             telemetry.addData("Status", "Searching...");
