@@ -6,12 +6,13 @@ import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 
 import org.firstinspires.ftc.teamcode.vision.LimelightVision;
 import org.firstinspires.ftc.teamcode.vision.VisionTarget;
 
 @Config
-public class DriveCodeCommon extends LinearOpMode {
+public class DriveCodeCommon extends LinearOpMode{
 
     double paddlewaiting = 1.0;
     double padllecatch = 0.0;
@@ -66,17 +67,26 @@ public class DriveCodeCommon extends LinearOpMode {
         } else {
             drive.intakeTwo.setPower(0);
         }
+        if (gamepad2.x){
+            drive.intakeOne.setPower(1.0);
+            drive.intakeTwo.setPower(1.0);
+        }
     }
-    public void shooter(MecanumDrive drive){// launcher1 = bottom launcher2 = top
+    public void shooter(MecanumDrive drive, PID_Tune tuner1, PID_Tune2 tuner2){// launcher1 = bottom launcher2 = top
         //drive.launcherOne.setPower(gamepad2.right_trigger);
         //drive.launcherTwo.setPower(gamepad2.left_trigger);
+        PIDFCoefficients pidfCoefficients1 = new PIDFCoefficients(tuner1.P, 0,0 , tuner1.F);
+        drive.launcherOne.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients1);
+
+        PIDFCoefficients pidfCoefficients2 = new PIDFCoefficients(tuner2.P, 0,0 , tuner2.F);
+        drive.launcherTwo.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients2);
         if (gamepad2.right_trigger > 0.5){
-            drive.launcherOne.setVelocity(1500); //bottomwheel
-            drive.launcherTwo.setVelocity(1000); //topwheel
+            drive.launcherOne.setVelocity(1500); //bottom wheel
+            drive.launcherTwo.setVelocity(750); //top wheel
         }
         else if(gamepad2.left_trigger > 0.5){
-            drive.launcherOne.setVelocity(1000); //topwheel
-            drive.launcherTwo.setVelocity(1500); //bottomwheel
+            drive.launcherOne.setVelocity(1000); //top wheel
+            drive.launcherTwo.setVelocity(1500); //bottom wheel
         }
         else {
             drive.launcherOne.setVelocity(0.0);
@@ -87,6 +97,11 @@ public class DriveCodeCommon extends LinearOpMode {
         }
         else {
             drive.pusherWheel.setPower(0.0);
+        }
+        if (gamepad2.x){
+            drive.launcherOne.setVelocity(-500);
+            drive.launcherTwo.setVelocity(-500);
+            drive.pusherWheel.setPower(1.0);
         }
         /*if(gamepad2.left_trigger > 0.5){
             drive.launcherOne.setPower(1.0);
