@@ -231,16 +231,17 @@ public class DriveCodeCommon extends LinearOpMode {
             }
 
             telemetry.addData("Pillar", "VISIBLE");
+            telemetry.addData("raw ty", "%.2f", pillarTag.getTy());
             telemetry.addData("Distance", "%.1f in (target: %.1f)", distance,
                     IDEAL_SHOOT_DISTANCE);
             telemetry.addData("Direction", direction);
             telemetry.addData("Status", inRange ? ">>> IN RANGE <<<" : "OUT OF RANGE");
 
-            if (inRange) {
-                drive.blinkin.setPattern(RevBlinkinLedDriver.BlinkinPattern.GREEN);
-            } else {
-                drive.blinkin.setPattern(RevBlinkinLedDriver.BlinkinPattern.RED);
-            }
+            //if (inRange) {
+                //drive.blinkin.setPattern(RevBlinkinLedDriver.BlinkinPattern.GREEN);
+            //} //else {
+                //drive.blinkin.setPattern(RevBlinkinLedDriver.BlinkinPattern.RED);
+            //}
         } else {
             telemetry.addData("Pillar", "NOT VISIBLE");
             telemetry.addData("Status", "Searching...");
