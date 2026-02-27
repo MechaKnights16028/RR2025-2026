@@ -70,8 +70,15 @@ public class BlueAuto extends LinearOpMode {
     public void runOpMode(){
         Pose2d initialPose = new Pose2d(0, 63, Math.toRadians(90));
         MecanumDrive drive = new MecanumDrive(hardwareMap, initialPose );
+        /*drive.leftFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        drive.leftBack.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        drive.rightFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        drive.rightBack.setMode(DcMotor.RunMode.RUN_USING_ENCODER);*/
         Action moveOutOfStart = (drive.actionBuilder(initialPose))
-                .lineToY(60)
+                .lineToY(40)
+                .build();
+        Action moveToPreload = drive.actionBuilder(initialPose)
+                .lineToY(28)
                 .build();
         waitForStart();
         if (isStopRequested()) return;
@@ -85,7 +92,8 @@ public class BlueAuto extends LinearOpMode {
                                 shooter.new Shoot(),
                                 intake.new IntakeBalls()
                         ),
-                        moveOutOfStart
+                        moveOutOfStart,
+                        moveToPreload
                 )
         );    }
 }
