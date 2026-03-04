@@ -32,7 +32,7 @@ public class DriveCodeCommon extends LinearOpMode{
     public static double ANGLE_TOLERANCE = 2.0;
     public static double ALIGN_ROTATE_GAIN = 0.03;
     public static double ALIGN_DRIVE_GAIN = 0.06;
-    public static double ALIGN_MAX_POWER = 0.4;
+    public static double ALIGN_MAX_POWER = 0.25;
     public static double SEARCH_SPIN_POWER = 0.6;
 
 
