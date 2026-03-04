@@ -166,6 +166,12 @@ public class LimelightVision {
         if (currentPipeline != PIPELINE_PILLAR_TAGS) {
             limelight.pipelineSwitch(PIPELINE_PILLAR_TAGS);
             currentPipeline = PIPELINE_PILLAR_TAGS;
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+
             telemetry.addData("LimelightVision", "Switched to pillar AprilTag pipeline");
         }
     }
@@ -178,6 +184,12 @@ public class LimelightVision {
         if (currentPipeline != PIPELINE_CENTER_TAGS) {
             limelight.pipelineSwitch(PIPELINE_CENTER_TAGS);
             currentPipeline = PIPELINE_CENTER_TAGS;
+              try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+
             telemetry.addData("LimelightVision", "Switched to center AprilTag pipeline");
         }
     }
