@@ -29,14 +29,16 @@ public class DriveCodeCommon extends LinearOpMode{
 
     public static double IDEAL_SHOOT_DISTANCE = 96.0;
     public static double DISTANCE_TOLERANCE = 3.0;
-    public static double ANGLE_TOLERANCE = 2.0;
+    public static double ANGLE_TOLERANCE = 0.10;
     public static double ALIGN_ROTATE_GAIN = 0.03;
     public static double ALIGN_DRIVE_GAIN = 0.06;
-    public static double ALIGN_MAX_POWER = 0.25;
+    public static double ALIGN_MAX_POWER = 0.6;
     public static double SEARCH_SPIN_POWER = 0.6;
 
 
     double speed = 1.0;
+    protected boolean autoAlignActive = false;
+    protected boolean prevButtonA = false;
 //Alliance selection method
     protected boolean isRedAlliance = false;
 
@@ -119,13 +121,8 @@ public class DriveCodeCommon extends LinearOpMode{
         VisionTarget pillarTag = limelight.getPillarTarget(isRedAlliance);
 
         if (!pillarTag.isTargetFound()) {
-            if (gamepad1.a) {
-                double searchDirection = isRedAlliance ? SEARCH_SPIN_POWER : SEARCH_SPIN_POWER;
-                drive.setDrivePowers(new PoseVelocity2d(new Vector2d(0, 0), searchDirection));
-                telemetry.addData("Auto-align", "SEARCHING...");
-            } else {
-                drive.setDrivePowers(new PoseVelocity2d(new Vector2d(0, 0), 0));
-            }
+            drive.setDrivePowers(new PoseVelocity2d(new Vector2d(0, 0), SEARCH_SPIN_POWER));
+            telemetry.addData("Auto-align", "SEARCHING...");
             return;
         }
 
@@ -135,17 +132,18 @@ public class DriveCodeCommon extends LinearOpMode{
         double rotatePower = 0;
         double drivePower = 0;
 
-        if (gamepad1.a) {
-            if (Math.abs(angleDegrees) > ANGLE_TOLERANCE) {
-                rotatePower = angleDegrees * ALIGN_ROTATE_GAIN;
-                if (Math.abs(rotatePower) < 0.2) {
-                    rotatePower = Math.copySign(0.15, rotatePower);
-                }
-                rotatePower = Math.max(-ALIGN_MAX_POWER, Math.min(ALIGN_MAX_POWER, rotatePower));
+        if (Math.abs(angleDegrees) > ANGLE_TOLERANCE) {
+            rotatePower = angleDegrees * ALIGN_ROTATE_GAIN;
+            if (Math.abs(rotatePower) < 0.2) {
+                rotatePower = Math.copySign(0.15, rotatePower);
             }
-            telemetry.addData("Angle error", "%.1f deg", angleDegrees);
-            telemetry.addData("Rotate power", "%.3f", rotatePower);
+            rotatePower = Math.max(-ALIGN_MAX_POWER, Math.min(ALIGN_MAX_POWER, rotatePower));
+        } else {
+            autoAlignActive = false;
+            telemetry.addData("Auto-align", "ALIGNED!");
         }
+        telemetry.addData("Angle error", "%.1f deg", angleDegrees);
+        telemetry.addData("Rotate power", "%.3f", rotatePower);
 
         if (gamepad1.b) {
             double distanceError = distance - IDEAL_SHOOT_DISTANCE;

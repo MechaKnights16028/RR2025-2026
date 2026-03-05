@@ -20,7 +20,12 @@ public class DriveCode extends DriveCodeCommon {
                 telemetry);
 
         while (opModeIsActive()) {
-            if (gamepad1.a || gamepad1.b) {
+            if (gamepad1.a && !prevButtonA) {
+                autoAlignActive = !autoAlignActive;
+            }
+            prevButtonA = gamepad1.a;
+
+            if (autoAlignActive || gamepad1.b) {
                 autoAlign(drive, limelight);
             } else {
                 drives(drive);
