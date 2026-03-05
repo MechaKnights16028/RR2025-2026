@@ -53,7 +53,7 @@ public class DriveCodeCommon extends LinearOpMode{
                         -gamepad1.left_stick_y*speed,
                         gamepad1.left_stick_x*speed
                 ),
-                gamepad1.right_stick_x*speed
+                -gamepad1.right_stick_x*speed
         ));
     }
     public void intake(MecanumDrive drive){
@@ -85,8 +85,8 @@ public class DriveCodeCommon extends LinearOpMode{
             drive.launcherTwo.setVelocity(750); //top wheel
         }
         else if(gamepad2.left_trigger > 0.5){
-            drive.launcherOne.setVelocity(1000); //top wheel
-            drive.launcherTwo.setVelocity(1500); //bottom wheel
+            drive.launcherOne.setVelocity(950); //top wheel
+            drive.launcherTwo.setVelocity(1450); //bottom wheel
         }
         else {
             drive.launcherOne.setVelocity(0.0);
