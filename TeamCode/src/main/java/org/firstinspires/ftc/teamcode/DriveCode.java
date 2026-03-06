@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.firstinspires.ftc.teamcode.vision.LimelightVision;
+import org.firstinspires.ftc.teamcode.vision.VisionTarget;
 @TeleOp
 public class DriveCode extends DriveCodeCommon {
     @Override
@@ -22,18 +23,22 @@ public class DriveCode extends DriveCodeCommon {
         while (opModeIsActive()) {
             if (gamepad1.a && !prevButtonA) {
                 autoAlignActive = !autoAlignActive;
+                autoAlignStartTime = System.currentTimeMillis();
+                savedTagHeading = Double.NaN;
             }
             prevButtonA = gamepad1.a;
 
+            VisionTarget pillarTag = limelight.getPillarTarget(isRedAlliance);
+
             if (autoAlignActive || gamepad1.b) {
-                autoAlign(drive, limelight);
+                autoAlign(drive, pillarTag);
             } else {
                 drives(drive);
             }
             intake(drive);
             //holder(drive);
             shooter(drive,tuner1,tuner2);
-            visionTelemetry(drive, limelight);
+            visionTelemetry(pillarTag);
             telemetry.update();
         }
 

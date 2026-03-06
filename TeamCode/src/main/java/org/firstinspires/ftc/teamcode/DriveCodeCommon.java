@@ -41,6 +41,7 @@ public class DriveCodeCommon extends LinearOpMode{
     protected boolean prevButtonA = false;
     protected long autoAlignStartTime = 0;
     public static long AUTO_ALIGN_TIMEOUT_MS = 5000;
+    protected double savedTagHeading = Double.NaN;
 //Alliance selection method
     protected boolean isRedAlliance = false;
 
