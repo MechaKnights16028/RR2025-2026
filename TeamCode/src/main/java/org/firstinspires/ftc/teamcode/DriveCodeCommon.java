@@ -75,6 +75,7 @@ public class DriveCodeCommon extends LinearOpMode{
     public void shooter(MecanumDrive drive, PID_Tune tuner1, PID_Tune2 tuner2){// launcher1 = bottom launcher2 = top
         //drive.launcherOne.setPower(gamepad2.right_trigger);
         //drive.launcherTwo.setPower(gamepad2.left_trigger);
+
         PIDFCoefficients pidfCoefficients1 = new PIDFCoefficients(tuner1.P, 0,0 , tuner1.F);
         drive.launcherOne.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients1);
 
@@ -89,6 +90,8 @@ public class DriveCodeCommon extends LinearOpMode{
             drive.launcherTwo.setVelocity(1450); //bottom wheel
         }
         else if(gamepad2.right_stick_button){
+            drive.pattern = RevBlinkinLedDriver.BlinkinPattern.BLUE;
+            drive.blinkin.setPattern(drive.pattern);
             drive.launcherOne.setVelocity(10000);
             drive.launcherTwo.setVelocity(10000);
         }
