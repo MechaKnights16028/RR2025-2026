@@ -87,8 +87,8 @@ public class DriveCodeCommon extends LinearOpMode{
         PIDFCoefficients pidfCoefficients2 = new PIDFCoefficients(tuner2.P, 0,0 , tuner2.F);
         drive.launcherTwo.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients2);
         if (gamepad2.right_trigger > 0.5){
-            drive.launcherOne.setVelocity(1500); //bottom wheel
-            drive.launcherTwo.setVelocity(750); //top wheel
+            drive.launcherOne.setVelocity(1400); //bottom wheel
+            drive.launcherTwo.setVelocity(650); //top wheel
         }
         else if(gamepad2.left_trigger > 0.5){
             drive.launcherOne.setVelocity(950); //top wheel
