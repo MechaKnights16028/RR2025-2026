@@ -88,6 +88,10 @@ public class DriveCodeCommon extends LinearOpMode{
             drive.launcherOne.setVelocity(950); //top wheel
             drive.launcherTwo.setVelocity(1450); //bottom wheel
         }
+        else if(gamepad2.right_stick_button){
+            drive.launcherOne.setVelocity(10000);
+            drive.launcherTwo.setVelocity(10000);
+        }
         else {
             drive.launcherOne.setVelocity(0.0);
             drive.launcherTwo.setVelocity(0.0);
