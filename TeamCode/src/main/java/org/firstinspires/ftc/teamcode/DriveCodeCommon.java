@@ -28,7 +28,7 @@ public class DriveCodeCommon extends LinearOpMode{
     int GREEN_BLUE_MAX = 70;
 
     public static double IDEAL_SHOOT_DISTANCE = 96.0;
-    public static double DISTANCE_TOLERANCE = 3.0;
+    public static double DISTANCE_TOLERANCE = 1.0;
     public static double ANGLE_TOLERANCE = 0.10;
     public static double ALIGN_ROTATE_GAIN = 0.03;
     public static double ALIGN_DRIVE_GAIN = 0.06;
@@ -39,6 +39,8 @@ public class DriveCodeCommon extends LinearOpMode{
     double speed = 1.0;
     protected boolean autoAlignActive = false;
     protected boolean prevButtonA = false;
+    protected long autoAlignStartTime = 0;
+    public static long AUTO_ALIGN_TIMEOUT_MS = 5000;
 //Alliance selection method
     protected boolean isRedAlliance = false;
 
@@ -117,8 +119,13 @@ public class DriveCodeCommon extends LinearOpMode{
         }*/
     }
 
-    public void autoAlign(MecanumDrive drive, LimelightVision limelight) {
-        VisionTarget pillarTag = limelight.getPillarTarget(isRedAlliance);
+    public void autoAlign(MecanumDrive drive, VisionTarget pillarTag) {
+        if (System.currentTimeMillis() - autoAlignStartTime > AUTO_ALIGN_TIMEOUT_MS) {
+            autoAlignActive = false;
+            drive.setDrivePowers(new PoseVelocity2d(new Vector2d(0, 0), 0));
+            telemetry.addData("Auto-align", "TIMED OUT");
+            return;
+        }
 
         if (!pillarTag.isTargetFound()) {
             drive.setDrivePowers(new PoseVelocity2d(new Vector2d(0, 0), SEARCH_SPIN_POWER));
@@ -221,10 +228,8 @@ public class DriveCodeCommon extends LinearOpMode{
         telemetry.addLine("Press LEFT for BLUE, RIGHT for RED");
     }
 
-    public void visionTelemetry(MecanumDrive drive, LimelightVision limelight) {
+    public void visionTelemetry(VisionTarget pillarTag) {
         telemetry.addData("Alliance", isRedAlliance ? "RED" : "BLUE");
-
-        VisionTarget pillarTag = limelight.getPillarTarget(isRedAlliance);
 
         if (pillarTag.isTargetFound()) {
             double distance = pillarTag.getDistance();
