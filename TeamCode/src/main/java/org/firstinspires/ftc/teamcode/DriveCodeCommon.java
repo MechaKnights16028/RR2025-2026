@@ -29,7 +29,7 @@ public class DriveCodeCommon extends LinearOpMode{
 
     public static double IDEAL_SHOOT_DISTANCE = 96.0;
     public static double DISTANCE_TOLERANCE = 1.0;
-    public static double ANGLE_TOLERANCE = 0.10;
+    public static double ANGLE_TOLERANCE = 0.90;
     public static double ALIGN_ROTATE_GAIN = 0.03;
     public static double ALIGN_DRIVE_GAIN = 0.06;
     public static double ALIGN_MAX_POWER = 0.6;
