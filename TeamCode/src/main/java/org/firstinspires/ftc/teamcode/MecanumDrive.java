@@ -128,6 +128,8 @@ public final class MecanumDrive {
     private final DownsampledWriter driveCommandWriter = new DownsampledWriter("DRIVE_COMMAND", 50_000_000);
     private final DownsampledWriter mecanumCommandWriter = new DownsampledWriter("MECANUM_COMMAND", 50_000_000);
 
+    RevBlinkinLedDriver blinkin;
+    RevBlinkinLedDriver.BlinkinPattern pattern;
     public class DriveLocalizer implements Localizer {
         public final Encoder leftFront, leftBack, rightBack, rightFront;
         public final IMU imu;
@@ -246,7 +248,7 @@ public final class MecanumDrive {
         launcherOne = hardwareMap.get(DcMotorEx.class,"launcherOne");
         launcherTwo = hardwareMap.get(DcMotorEx.class, "launcherTwo");
 
-        //blinkin = hardwareMap.get(RevBlinkinLedDriver.class, "blinkin");
+        blinkin = hardwareMap.get(RevBlinkinLedDriver.class, "blinkin");
 
         pusherWheel = hardwareMap.get(CRServo.class, "pusherwheel" );
 
