@@ -60,7 +60,7 @@ public class BlueAutoClose extends LinearOpMode {
             private long startTime = -1;
             public boolean run(@NonNull TelemetryPacket packet){
                 if (startTime < 0) startTime = System.currentTimeMillis();
-                if (launcher1.getVelocity()>1440 && launcher2.getVelocity()>740){
+                if (launcher1.getVelocity()==1450 && launcher2.getVelocity()==750){
                     intake1.setPower(-1.0);
                     intake2.setPower(-0.5);
                     pusherWheel.setPower(-1.0);
@@ -107,5 +107,14 @@ public class BlueAutoClose extends LinearOpMode {
                 )
 
         );
+        drive.leftBack.setPower(-1.0);
+        drive.leftFront.setPower(1.0);
+        drive.rightBack.setPower(1.0);
+        drive.rightFront.setPower(-1.0);
+        sleep(750);
+        drive.leftBack.setPower(0.0);
+        drive.leftFront.setPower(0.0);
+        drive.rightBack.setPower(0.0);
+        drive.rightFront.setPower(0.0);
     }
 }
