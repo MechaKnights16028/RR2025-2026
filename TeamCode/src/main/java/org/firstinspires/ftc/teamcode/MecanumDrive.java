@@ -113,7 +113,6 @@ public final class MecanumDrive {
     public final DcMotorEx leftFront, leftBack, rightBack, rightFront;
     public final DcMotorEx launcherOne,launcherTwo;
     public final CRServo intakeOne, intakeTwo, pusherWheel;
-    //public final ColorSensor paddle1;*/
 
     //public final RevBlinkinLedDriver blinkin;
 

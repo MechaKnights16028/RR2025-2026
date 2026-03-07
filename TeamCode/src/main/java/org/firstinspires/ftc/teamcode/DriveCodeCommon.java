@@ -7,6 +7,8 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
+import com.acmerobotics.roadrunner.PoseVelocity2d;
+import com.acmerobotics.roadrunner.Vector2d;
 
 import org.firstinspires.ftc.teamcode.vision.LimelightVision;
 import org.firstinspires.ftc.teamcode.vision.VisionTarget;
@@ -25,16 +27,21 @@ public class DriveCodeCommon extends LinearOpMode{
     int GREEN_RED_MAX = 70;
     int GREEN_BLUE_MAX = 70;
 
-    public static double IDEAL_SHOOT_DISTANCE = 62.0;
-    public static double DISTANCE_TOLERANCE = 3.0;
-    public static double ANGLE_TOLERANCE = 2.0;
-    public static double ALIGN_ROTATE_GAIN = 0.02;
+    public static double IDEAL_SHOOT_DISTANCE = 97.0;
+    public static double DISTANCE_TOLERANCE = 1.0;
+    public static double ANGLE_TOLERANCE = 0.90;
+    public static double ALIGN_ROTATE_GAIN = 0.03;
     public static double ALIGN_DRIVE_GAIN = 0.06;
-    public static double ALIGN_MAX_POWER = 0.4;
-    public static double SEARCH_SPIN_POWER = 0.25;
+    public static double ALIGN_MAX_POWER = 0.6;
+    public static double SEARCH_SPIN_POWER = 0.6;
 
 
     double speed = 1.0;
+    protected boolean autoAlignActive = false;
+    protected boolean prevButtonA = false;
+    protected long autoAlignStartTime = 0;
+    public static long AUTO_ALIGN_TIMEOUT_MS = 5000;
+    protected double savedTagHeading = Double.NaN;
 //Alliance selection method
     protected boolean isRedAlliance = false;
 
@@ -120,53 +127,67 @@ public class DriveCodeCommon extends LinearOpMode{
         }*/
     }
 
-    public void autoAlign(MecanumDrive drive, LimelightVision limelight) {
-        VisionTarget pillarTag = limelight.getPillarTarget(isRedAlliance);
-
-        if (!pillarTag.isTargetFound()) {
-            if (gamepad1.a) {
-                double searchDirection = isRedAlliance ? -SEARCH_SPIN_POWER : SEARCH_SPIN_POWER;
-                drive.setDrivePowers(new PoseVelocity2d(new Vector2d(0, 0), searchDirection));
-                telemetry.addData("Auto-align", "SEARCHING...");
-            } else {
-                drive.setDrivePowers(new PoseVelocity2d(new Vector2d(0, 0), 0));
-            }
+    public void autoAlign(MecanumDrive drive, VisionTarget pillarTag, double[] botpose) {
+        // Cancel if timed out
+        if (System.currentTimeMillis() - autoAlignStartTime > AUTO_ALIGN_TIMEOUT_MS) {
+            autoAlignActive = false;
+            savedTagHeading = Double.NaN;
+            drive.setDrivePowers(new PoseVelocity2d(new Vector2d(0, 0), 0));
+            telemetry.addData("Auto-align", "TIMED OUT");
             return;
         }
 
-        double distance = pillarTag.getDistance();
-        double angleDegrees = Math.toDegrees(pillarTag.getAngleToTarget());
-
+        boolean botposeValid = botpose != null;
         double rotatePower = 0;
         double drivePower = 0;
 
-        if (gamepad1.a) {
+        if (pillarTag.isTargetFound()) {
+            // Camera sees the tag — use tx for rotation
+            double angleDegrees = Math.toDegrees(pillarTag.getAngleToTarget());
+
+            // If Limelight field map is active, save the world heading to this tag
+            if (botposeValid) {
+                double robotYawRad = Math.toRadians(botpose[5]);
+                savedTagHeading = robotYawRad + pillarTag.getAngleToTarget();
+            }
+
             if (Math.abs(angleDegrees) > ANGLE_TOLERANCE) {
-                rotatePower = -angleDegrees * ALIGN_ROTATE_GAIN;
+                rotatePower = angleDegrees * ALIGN_ROTATE_GAIN;
+                if (Math.abs(rotatePower) < 0.15) {
+                    rotatePower = Math.copySign(0.15, rotatePower);
+                }
+                rotatePower = Math.max(-ALIGN_MAX_POWER, Math.min(ALIGN_MAX_POWER, rotatePower));
+            } else {
+                autoAlignActive = false;
+                savedTagHeading = Double.NaN;
+                telemetry.addData("Auto-align", "ALIGNED!");
+            }
+            telemetry.addData("Angle error", "%.1f deg", angleDegrees);
+
+        } else if (!Double.isNaN(savedTagHeading) && botposeValid) {
+            // Tag not visible but Limelight map tells us where we are —
+            // rotate back toward the heading where we last saw the tag
+            double robotYawRad = Math.toRadians(botpose[5]);
+            double headingError = savedTagHeading - robotYawRad;
+            while (headingError > Math.PI)  headingError -= 2 * Math.PI;
+            while (headingError < -Math.PI) headingError += 2 * Math.PI;
+
+            telemetry.addData("Auto-align", "RETURNING TO TAG");
+            if (Math.abs(headingError) > Math.toRadians(ANGLE_TOLERANCE)) {
+                rotatePower = Math.toDegrees(headingError) * ALIGN_ROTATE_GAIN;
                 if (Math.abs(rotatePower) < 0.15) {
                     rotatePower = Math.copySign(0.15, rotatePower);
                 }
                 rotatePower = Math.max(-ALIGN_MAX_POWER, Math.min(ALIGN_MAX_POWER, rotatePower));
             }
-            telemetry.addData("Angle error", "%.1f deg", angleDegrees);
+
+        } else {
+            // No tag, no map data — spin slowly to search
+            rotatePower = SEARCH_SPIN_POWER;
+            telemetry.addData("Auto-align", "SEARCHING...");
         }
 
-        if (gamepad1.b) {
-            double distanceError = distance - IDEAL_SHOOT_DISTANCE;
-            if (Math.abs(distanceError) > DISTANCE_TOLERANCE) {
-                drivePower = distanceError * ALIGN_DRIVE_GAIN;
-                if (Math.abs(drivePower) < 0.15) {
-                    drivePower = Math.copySign(0.15, drivePower);
-                }
-                drivePower = Math.max(-ALIGN_MAX_POWER, Math.min(ALIGN_MAX_POWER, drivePower));
-            }
-            telemetry.addData("Distance error", "%.1f in", distanceError);
-        }
-
-        drive.setDrivePowers(new PoseVelocity2d(
-                new Vector2d(drivePower, 0),
-                rotatePower
-        ));
+        drive.setDrivePowers(new PoseVelocity2d(new Vector2d(drivePower, 0), rotatePower));
     }
 
     /*
@@ -227,10 +248,8 @@ public class DriveCodeCommon extends LinearOpMode{
         telemetry.addLine("Press LEFT for BLUE, RIGHT for RED");
     }
 
-    public void visionTelemetry(LimelightVision limelight) {
+    public void visionTelemetry(VisionTarget pillarTag) {
         telemetry.addData("Alliance", isRedAlliance ? "RED" : "BLUE");
-
-        VisionTarget pillarTag = limelight.getPillarTarget(isRedAlliance);
 
         if (pillarTag.isTargetFound()) {
             double distance = pillarTag.getDistance();
@@ -252,15 +271,16 @@ public class DriveCodeCommon extends LinearOpMode{
             }
 
             telemetry.addData("Pillar", "VISIBLE");
+            telemetry.addData("raw ty", "%.2f", pillarTag.getTy());
             telemetry.addData("Distance", "%.1f in (target: %.1f)", distance,
                     IDEAL_SHOOT_DISTANCE);
             telemetry.addData("Direction", direction);
             telemetry.addData("Status", inRange ? ">>> IN RANGE <<<" : "OUT OF RANGE");
 
             //if (inRange) {
-                //blinkin.setPattern(RevBlinkinLedDriver.BlinkinPattern.GREEN);
-            //} else {
-                //blinkin.setPattern(RevBlinkinLedDriver.BlinkinPattern.RED);
+                //drive.blinkin.setPattern(RevBlinkinLedDriver.BlinkinPattern.GREEN);
+            //} //else {
+                //drive.blinkin.setPattern(RevBlinkinLedDriver.BlinkinPattern.RED);
             //}
         } else {
             telemetry.addData("Pillar", "NOT VISIBLE");
