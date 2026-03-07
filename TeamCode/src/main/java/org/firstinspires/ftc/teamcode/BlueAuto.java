@@ -103,7 +103,7 @@ public class BlueAuto extends LinearOpMode {
         drive.leftFront.setPower(1.0);
         drive.rightBack.setPower(1.0);
         drive.rightFront.setPower(1.0);
-        sleep(500);
+        sleep(300);
         drive.leftBack.setPower(0.0);
         drive.leftFront.setPower(0.0);
         drive.rightBack.setPower(0.0);
