@@ -1,6 +1,8 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.PoseVelocity2d;
+import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.firstinspires.ftc.teamcode.vision.LimelightVision;
 import org.firstinspires.ftc.teamcode.vision.VisionTarget;
@@ -19,8 +21,10 @@ public class DriveCode extends DriveCodeCommon {
         waitForStart();
         LimelightVision limelight = new LimelightVision(hardwareMap, "limelight",
                 telemetry);
+        sleep(1000);
 
         while (opModeIsActive()) {
+            // Toggle auto-align on single press of A
             if (gamepad1.a && !prevButtonA) {
                 autoAlignActive = !autoAlignActive;
                 autoAlignStartTime = System.currentTimeMillis();
@@ -28,10 +32,18 @@ public class DriveCode extends DriveCodeCommon {
             }
             prevButtonA = gamepad1.a;
 
+            // Fetch vision data once per loop
             VisionTarget pillarTag = limelight.getPillarTarget(isRedAlliance);
+            double[] botpose = limelight.getBotpose();
 
-            if (autoAlignActive || gamepad1.b) {
-                autoAlign(drive, pillarTag);
+            if (autoAlignActive) {
+                autoAlign(drive, pillarTag, botpose);
+            } else if (gamepad1.b) {
+                if (pillarTag.isTargetFound() && pillarTag.getDistance() < IDEAL_SHOOT_DISTANCE) {
+                    drive.setDrivePowers(new PoseVelocity2d(new Vector2d(-0.4, 0), 0));
+                } else {
+                    drive.setDrivePowers(new PoseVelocity2d(new Vector2d(0, 0), 0));
+                }
             } else {
                 drives(drive);
             }

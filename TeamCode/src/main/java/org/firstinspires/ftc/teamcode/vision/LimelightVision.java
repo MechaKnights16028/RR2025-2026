@@ -6,6 +6,9 @@ import com.qualcomm.hardware.limelightvision.LLStatus;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
+
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 import java.util.ArrayList;
@@ -503,6 +506,30 @@ public class LimelightVision {
         } else {
             telemetry.addData("Target Found", "NO");
         }
+    }
+
+    /**
+     * Gets the robot's field position from the Limelight's internal map (MegaTag).
+     * Returns [x, y, z, roll, pitch, yaw] in meters/degrees, or null if unavailable.
+     * Yaw (index 5) is the robot's heading on the field in degrees.
+     * Only works if the field map is configured on the Limelight.
+     */
+    public double[] getBotpose() {
+        LLResult result = limelight.getLatestResult();
+        if (result == null || !result.isValid()) return null;
+        Pose3D pose3D = result.getBotpose();
+        if (pose3D == null) return null;
+        double[] botpose = new double[] {
+            pose3D.getPosition().x,
+            pose3D.getPosition().y,
+            pose3D.getPosition().z,
+            pose3D.getOrientation().getRoll(AngleUnit.DEGREES),
+            pose3D.getOrientation().getPitch(AngleUnit.DEGREES),
+            pose3D.getOrientation().getYaw(AngleUnit.DEGREES)
+        };
+        // If x and y are both zero, MegaTag is not configured or not seeing tags
+        if (botpose[0] == 0 && botpose[1] == 0) return null;
+        return botpose;
     }
 
     /**

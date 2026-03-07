@@ -27,7 +27,7 @@ public class DriveCodeCommon extends LinearOpMode{
     int GREEN_RED_MAX = 70;
     int GREEN_BLUE_MAX = 70;
 
-    public static double IDEAL_SHOOT_DISTANCE = 96.0;
+    public static double IDEAL_SHOOT_DISTANCE = 97.0;
     public static double DISTANCE_TOLERANCE = 1.0;
     public static double ANGLE_TOLERANCE = 0.90;
     public static double ALIGN_ROTATE_GAIN = 0.03;
@@ -127,55 +127,67 @@ public class DriveCodeCommon extends LinearOpMode{
         }*/
     }
 
-    public void autoAlign(MecanumDrive drive, VisionTarget pillarTag) {
+    public void autoAlign(MecanumDrive drive, VisionTarget pillarTag, double[] botpose) {
+        // Cancel if timed out
         if (System.currentTimeMillis() - autoAlignStartTime > AUTO_ALIGN_TIMEOUT_MS) {
             autoAlignActive = false;
+            savedTagHeading = Double.NaN;
             drive.setDrivePowers(new PoseVelocity2d(new Vector2d(0, 0), 0));
             telemetry.addData("Auto-align", "TIMED OUT");
             return;
         }
 
-        if (!pillarTag.isTargetFound()) {
-            drive.setDrivePowers(new PoseVelocity2d(new Vector2d(0, 0), SEARCH_SPIN_POWER));
-            telemetry.addData("Auto-align", "SEARCHING...");
-            return;
-        }
-
-        double distance = pillarTag.getDistance();
-        double angleDegrees = Math.toDegrees(pillarTag.getAngleToTarget());
-
+        boolean botposeValid = botpose != null;
         double rotatePower = 0;
         double drivePower = 0;
 
-        if (Math.abs(angleDegrees) > ANGLE_TOLERANCE) {
-            rotatePower = angleDegrees * ALIGN_ROTATE_GAIN;
-            if (Math.abs(rotatePower) < 0.2) {
-                rotatePower = Math.copySign(0.15, rotatePower);
-            }
-            rotatePower = Math.max(-ALIGN_MAX_POWER, Math.min(ALIGN_MAX_POWER, rotatePower));
-        } else {
-            autoAlignActive = false;
-            telemetry.addData("Auto-align", "ALIGNED!");
-        }
-        telemetry.addData("Angle error", "%.1f deg", angleDegrees);
-        telemetry.addData("Rotate power", "%.3f", rotatePower);
+        if (pillarTag.isTargetFound()) {
+            // Camera sees the tag — use tx for rotation
+            double angleDegrees = Math.toDegrees(pillarTag.getAngleToTarget());
 
-        if (gamepad1.b) {
-            double distanceError = distance - IDEAL_SHOOT_DISTANCE;
-            if (Math.abs(distanceError) > DISTANCE_TOLERANCE) {
-                drivePower = distanceError * ALIGN_DRIVE_GAIN;
-                if (Math.abs(drivePower) < 0.15) {
-                    drivePower = Math.copySign(0.15, drivePower);
+            // If Limelight field map is active, save the world heading to this tag
+            if (botposeValid) {
+                double robotYawRad = Math.toRadians(botpose[5]);
+                savedTagHeading = robotYawRad + pillarTag.getAngleToTarget();
+            }
+
+            if (Math.abs(angleDegrees) > ANGLE_TOLERANCE) {
+                rotatePower = angleDegrees * ALIGN_ROTATE_GAIN;
+                if (Math.abs(rotatePower) < 0.15) {
+                    rotatePower = Math.copySign(0.15, rotatePower);
                 }
-                drivePower = Math.max(-ALIGN_MAX_POWER, Math.min(ALIGN_MAX_POWER, drivePower));
+                rotatePower = Math.max(-ALIGN_MAX_POWER, Math.min(ALIGN_MAX_POWER, rotatePower));
+            } else {
+                autoAlignActive = false;
+                savedTagHeading = Double.NaN;
+                telemetry.addData("Auto-align", "ALIGNED!");
             }
-            telemetry.addData("Distance error", "%.1f in", distanceError);
+            telemetry.addData("Angle error", "%.1f deg", angleDegrees);
+
+        } else if (!Double.isNaN(savedTagHeading) && botposeValid) {
+            // Tag not visible but Limelight map tells us where we are —
+            // rotate back toward the heading where we last saw the tag
+            double robotYawRad = Math.toRadians(botpose[5]);
+            double headingError = savedTagHeading - robotYawRad;
+            while (headingError > Math.PI)  headingError -= 2 * Math.PI;
+            while (headingError < -Math.PI) headingError += 2 * Math.PI;
+
+            telemetry.addData("Auto-align", "RETURNING TO TAG");
+            if (Math.abs(headingError) > Math.toRadians(ANGLE_TOLERANCE)) {
+                rotatePower = Math.toDegrees(headingError) * ALIGN_ROTATE_GAIN;
+                if (Math.abs(rotatePower) < 0.15) {
+                    rotatePower = Math.copySign(0.15, rotatePower);
+                }
+                rotatePower = Math.max(-ALIGN_MAX_POWER, Math.min(ALIGN_MAX_POWER, rotatePower));
+            }
+
+        } else {
+            // No tag, no map data — spin slowly to search
+            rotatePower = SEARCH_SPIN_POWER;
+            telemetry.addData("Auto-align", "SEARCHING...");
         }
 
-        drive.setDrivePowers(new PoseVelocity2d(
-                new Vector2d(drivePower, 0),
-                rotatePower
-        ));
+        drive.setDrivePowers(new PoseVelocity2d(new Vector2d(drivePower, 0), rotatePower));
     }
 
     /*
