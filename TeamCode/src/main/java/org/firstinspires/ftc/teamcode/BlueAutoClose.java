@@ -60,7 +60,7 @@ public class BlueAutoClose extends LinearOpMode {
             private long startTime = -1;
             public boolean run(@NonNull TelemetryPacket packet){
                 if (startTime < 0) startTime = System.currentTimeMillis();
-                if (launcher1.getVelocity()==1450 && launcher2.getVelocity()==750){
+                if (launcher1.getVelocity()>1445 && launcher2.getVelocity()>745){
                     intake1.setPower(-1.0);
                     intake2.setPower(-0.5);
                     pusherWheel.setPower(-1.0);
