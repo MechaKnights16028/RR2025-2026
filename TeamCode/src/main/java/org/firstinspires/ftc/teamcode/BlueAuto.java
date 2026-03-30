@@ -61,9 +61,9 @@ public class BlueAuto extends LinearOpMode {
             private long startTime = -1;
             public boolean run(@NonNull TelemetryPacket packet){
                 if (startTime < 0) startTime = System.currentTimeMillis();
-                if (launcher1.getVelocity()>1440 && launcher2.getVelocity()>940){
-                    intake1.setPower(-1.0);
-                    intake2.setPower(-0.5);
+                if (launcher1.getVelocity()>1445 && launcher2.getVelocity()>945){
+                    intake1.setPower(-0.5);
+                    intake2.setPower(-0.25);
                     pusherWheel.setPower(-1.0);
                 }
                 return System.currentTimeMillis() - startTime < 15000;

@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.tuning;
 
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 
 import com.acmerobotics.dashboard.FtcDashboard;
@@ -147,6 +149,7 @@ public final class TuningOpModes {
                     rightEncs.add(new EncoderRef(0, 2));
                     rightEncs.add(new EncoderRef(0, 3));
                 } else if (md.localizer instanceof ThreeDeadWheelLocalizer) {
+                    Log.d("TuningOpModes", "ThreeDeadWheel branch hit");
                     ThreeDeadWheelLocalizer dl = (ThreeDeadWheelLocalizer) md.localizer;
                     encoderGroups.add(new LynxQuadratureEncoderGroup(
                             hardwareMap.getAll(LynxModule.class),
