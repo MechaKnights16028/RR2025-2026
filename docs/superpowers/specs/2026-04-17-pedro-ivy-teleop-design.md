@@ -2,42 +2,47 @@
 
 - **Date:** 2026-04-17
 - **Status:** Design approved by user; pending spec review and implementation plan
-- **Scope:** Add a new command-based TeleOp to this FTC project, driven by Pedro Pathing (path following) and Ivy (command-based framework). Existing Road Runner code remains untouched for reference and continued autonomous use.
+- **Scope:** Add a new command-based TeleOp to this FTC project, driven by Pedro Pathing (path following) and Ivy (command-based framework). Existing Road Runner code and `DriveCode` remain untouched for reference and continued use.
 
 ## 1. Motivation
 
-The team currently has one TeleOp (`DriveCode` → `DriveCodeCommon`) built directly on Road Runner's `MecanumDrive`. All hardware (drive motors, intake, launcher, paddle servo, color sensor) is owned by a single class and controlled by imperative methods in the OpMode. That works, but it:
+The team's current TeleOp (`DriveCode` → `DriveCodeCommon`) is built directly on Road Runner's `MecanumDrive`. All hardware, alliance state, vision handling, and auto-align logic live as imperative methods in one 290-line base class. That works but is hard to extend — each new driver-assist feature becomes another conditional branch in `runOpMode`.
 
-- Couples unrelated subsystems (drive + game-piece handling) in one class.
-- Has no abstraction for "a button runs a short automated action," making driver-assist features awkward to add.
-- Doesn't take advantage of pose-based path following during teleop.
-
-This design introduces a second TeleOp built on Pedro Pathing + Ivy, intentionally preserving the existing Road Runner code so the team can compare the two approaches side-by-side for teaching purposes. The new TeleOp reproduces today's driver behavior and adds three driver-assist actions.
+This design adds a second TeleOp built on Pedro Pathing + Ivy that reproduces every current driver behavior under a command-based architecture, preserves the existing Road Runner code for reference, and makes future driver-assist features drop-in additions instead of branch additions.
 
 ## 2. Goals
 
-1. New TeleOp with identical manual feel to today's `DriveCode` (mecanum driving with slow-mode, intake-while-held, launcher-always-on, color-sensor-driven paddle catch).
-2. Three driver-assist actions bound to gamepad buttons:
-   - **Path to a field pose** (preset scoring pose).
-   - **Snap to AprilTag** (pillar tags and center tags via Limelight).
-   - **Reset pose** (re-seed Pedro's localizer to a known starting pose).
-3. Command-based architecture using Ivy subsystems/commands/scheduler.
-4. Support two odometry configurations: three dead wheels (current) and goBILDA Pinpoint (future), selectable at runtime via FTC Dashboard.
-5. Heavy pedagogical comments in the code so the architecture is teachable to the team.
+1. A new TeleOp (`@TeleOp(name = "Pedro TeleOp")`) that ports **every** behavior in today's `DriveCode`:
+   - Mecanum driving with slow-mode (`gamepad1.right_bumper`).
+   - Two independent intake CRServos (`gamepad2.right_bumper`, `gamepad2.left_bumper`), with an intake-reverse on `gamepad2.x`.
+   - Two-wheel launcher with three fire modes (near / far / clear) driven by `gamepad2.right_trigger` / `left_trigger` / `right_stick_button`.
+   - Pusher wheel on `gamepad2.y`.
+   - Clear-jam macro on `gamepad2.x`: both intakes forward, both launchers reversed, pusher forward.
+   - Live PIDF tuning of both launcher motors via FTC Dashboard (same surface as `PID_Tune` / `PID_Tune2`).
+   - Blinkin LED set to BLUE during clear-mode shoot (preserved verbatim — see Quirks §13).
+   - Alliance selection during INIT (`gamepad1.dpad_left` / `right`).
+   - Pillar-tag auto-align, currently `gamepad1.a` toggle — re-implemented as a Pedro-based snap command.
+   - Move-toward-pillar creep, currently `gamepad1.b` hold — re-implemented as a Pedro-based approach command.
+2. Three additional driver-assist commands:
+   - `PathToPoseCommand` — path to a preset field pose (e.g., scoring spot).
+   - `SnapToAprilTagCommand` — Pedro snap to a standoff pose derived from a visible pillar or center tag. Supersedes the existing rotate-only auto-align.
+   - `ResetPoseCommand` — one-shot re-seed of Pedro's localizer.
+3. Command-based architecture using Ivy subsystems / commands / scheduler.
+4. Two odometry options selectable at Init via FTC Dashboard: three dead wheels (current) and goBILDA Pinpoint (future).
+5. Heavy pedagogical comments in the code so the team can learn the pattern.
 
 ## 3. Non-goals
 
-- Migrating autonomous (`BlueAuto`, `BlueAutoClose`, `blueAutoTest`, `Auto`) from Road Runner to Pedro. Road Runner stays in place.
-- Deleting or modifying existing `MecanumDrive`, `DriveCode`, `DriveCodeCommon`, `Old_*`, or RR localizer files.
-- Unit tests. FTC code is hardware-coupled; verification happens on-robot via a bring-up TeleOp (see §10).
-- Curved/spline paths in v1 of `PathToPoseCommand`. Straight-line paths are sufficient for teaching and initial testing; splines can be a follow-up.
-- Sharing a drive class between Pedro and Road Runner. Their abstractions don't align cleanly; side-by-side is simpler.
+- Migrating autonomous (`BlueAuto`, `BlueAutoClose`, `blueAutoTest`, `Auto`) from Road Runner to Pedro.
+- Deleting or modifying `MecanumDrive.java`, `DriveCode.java`, `DriveCodeCommon.java`, `Old_*` files, RR localizer classes, or `PID_Tune*`.
+- Unit tests. FTC code is hardware-coupled; verification happens on-robot via a bring-up TeleOp (§10).
+- Paddle / color-sensor "holder" behavior — those hardware devices do not exist in the current `MecanumDrive` and the `holder()` method in `DriveCodeCommon` is commented out. Dropped from scope.
+- Splines in `PathToPoseCommand` v1 — straight-line paths only. Splines are a follow-up.
+- Sharing any drive class between RR and Pedro.
 
 ## 4. Dependencies and build changes
 
-Pedro Pathing and Ivy are published to Maven Central. The project's existing `mavenCentral()` repository is sufficient — no new `maven { url ... }` block needed.
-
-Add to `TeamCode/build.gradle` alongside the existing Road Runner dependencies (do not remove any):
+Add to `TeamCode/build.gradle` alongside (not replacing) the existing Road Runner dependencies:
 
 ```gradle
 implementation "com.pedropathing:core:2.1.1"
@@ -45,150 +50,218 @@ implementation "com.pedropathing:ftc:2.1.1"
 implementation "com.pedropathing:ivy:1.0.0"
 ```
 
-**FTC SDK version.** Pedro 2.x requires a recent FTC SDK (10.x+). The current `FtcRobotController` module version must be verified before the implementation plan is executed; if below the Pedro minimum, the FTC SDK should be upgraded first.
+Published to Maven Central; the project's existing `mavenCentral()` repository is sufficient.
 
-**Android/NDK.** No changes. `compileSdkVersion 30`, `minSdkVersion 24`, Java 8 source/target remain as-is.
+**FTC SDK version.** Pedro 2.x requires a recent FTC SDK. The `FtcRobotController` module version must be verified during the implementation plan and bumped if too old.
+
+**Android/NDK.** No changes.
 
 ## 5. Package layout
 
-All new code under `org.firstinspires.ftc.teamcode.pedro`:
+All new code lives under `org.firstinspires.ftc.teamcode.pedro`:
 
 ```
 TeamCode/src/main/java/org/firstinspires/ftc/teamcode/
 ├── (existing RR files unchanged)
 └── pedro/
-    ├── PedroTeleOp.java                  # @TeleOp entry point
-    ├── PedroBringUpTeleOp.java           # debug @TeleOp: no driver-assist bindings (verification gate)
-    ├── RobotContainer.java               # single place where subsystems + bindings + presets are wired
+    ├── PedroTeleOp.java                  # @TeleOp entry point (alliance-select + scheduler loop)
+    ├── PedroBringUpTeleOp.java           # debug @TeleOp: default commands only, no assists
+    ├── RobotContainer.java               # one place that wires subsystems, defaults, bindings, presets
+    ├── AllianceColor.java                # enum RED / BLUE; passed to RobotContainer at runtime
     ├── subsystems/
-    │   ├── Drivetrain.java
-    │   ├── Intake.java
-    │   ├── Shooter.java
-    │   └── Holder.java
+    │   ├── Drivetrain.java               # 4 drive motors + Pedro Follower + localizer
+    │   ├── Intake.java                   # intakeOne + intakeTwo (CRServos)
+    │   ├── Shooter.java                  # launcherOne + launcherTwo (DcMotorEx) + PIDF
+    │   ├── Pusher.java                   # pusherWheel (CRServo)
+    │   └── Indicator.java                # blinkin (RevBlinkinLedDriver)
     └── commands/
-        ├── TeleOpDriveCommand.java
-        ├── IntakeCommand.java
-        ├── HolderAutoCommand.java
-        ├── ResetPoseCommand.java
-        ├── PathToPoseCommand.java
-        └── SnapToAprilTagCommand.java
+        ├── TeleOpDriveCommand.java       # default on Drivetrain
+        ├── IndicatorDefaultCommand.java  # default on Indicator; paints alliance color
+        ├── IntakeOneRunCommand.java      # gamepad2 RB
+        ├── IntakeTwoRunCommand.java      # gamepad2 LB
+        ├── ClearJamCommand.java          # gamepad2 X — multi-subsystem macro
+        ├── PushCommand.java              # gamepad2 Y
+        ├── ShootNearCommand.java         # gamepad2 RT > 0.5
+        ├── ShootFarCommand.java          # gamepad2 LT > 0.5
+        ├── ShootClearCommand.java        # gamepad2 right_stick_button
+        ├── ResetPoseCommand.java         # gamepad1 back
+        ├── PathToPoseCommand.java        # gamepad1 y  (holds)
+        ├── SnapToAprilTagCommand.java    # gamepad1 a  (holds; replaces autoAlign toggle)
+        └── ApproachShotCommand.java      # gamepad1 b  (holds; replaces move-toward-tag)
 ```
 
-**Hardware names** stay identical to the Road Runner `MecanumDrive`:
-- Drive: `leftFront`, `leftBack`, `rightFront`, `rightBack`
-- Subsystems: `intake`, `launcher`, `paddleOne`, `paddle1`
-- Odometry: `par0`, `par1`, `perp` (three dead wheels) or `pinpoint` (goBILDA Pinpoint)
+**Hardware names** in the new subsystems match the strings currently used by `MecanumDrive`:
+- Drive motors: `leftFront`, `leftBack`, `rightFront`, `rightBack`.
+- Intake: `intakeOne`, `intakeTwo`.
+- Launchers: `launcherOne`, `launcherTwo`.
+- Pusher: `pusherwheel` (yes, lowercase — `MecanumDrive.java:253` uses that exact string).
+- LED: `blinkin`.
+- Odometry: `par0`, `par1`, `perp` OR `pinpoint`.
+- Vision: `limelight`.
 
-No Robot Controller reconfiguration is required.
+See §13 for quirks that must be preserved byte-for-byte from the current config.
 
 ## 6. Subsystems
 
-Subsystems own hardware and guarantee mutual exclusion — the Ivy scheduler will not run two commands that require the same subsystem simultaneously. Commands never touch hardware directly; they only call subsystem methods.
+Subsystems own hardware and guarantee mutual exclusion — the Ivy scheduler will not run two commands that require the same subsystem at once. Commands never touch hardware directly.
 
 ### 6.1 `Drivetrain`
 
-Owns the four drive motors *and* Pedro's `Follower`. Only class in the project (new or old) that calls `setPower(...)` on a drive motor inside the Pedro world.
+Owns the four drive motors **and** Pedro's `Follower`. Only class that directly drives wheel power in the Pedro world.
 
 Public API:
+- `drive(double x, double y, double rot, boolean slow)` — robot-relative. Sign convention mirrors `DriveCodeCommon.drives()`: `x = -gamepad1.left_stick_y`, `y = -gamepad1.left_stick_x`, `rot = -gamepad1.right_stick_x`. `slow=true` multiplies by 0.5.
+- `setPose(Pose pose)` / `getPose() : Pose`.
+- `followPath(PathChain path)` / `isFollowing() : boolean` / `cancel()`.
+- `periodic()` — advances `follower.update()` while a path is active; no-op otherwise.
 
-- `drive(double x, double y, double rot, boolean slow)` — robot-relative teleop drive. `slow=true` halves all magnitudes (preserves today's `gamepad1.right_bumper` behavior).
-- `setPose(Pose pose)` — re-seeds Pedro's localizer.
-- `getPose() : Pose` — read-only accessor.
-- `followPath(PathChain path)` / `isFollowing()` / `cancel()` — start/stop an automated path.
-- `periodic()` — called every scheduler tick. Advances `follower.update()` while a path is active; otherwise no-op.
+**`Drivetrain.cancel()` contract:** stops the follower, clears the active-path reference, and calls `drive(0,0,0,false)` so motors stop in one tick. After `cancel()`, `isFollowing()` returns `false` and `followPath(...)` may be called again.
 
-**Localizer selection** (see §7) lives entirely inside this class.
+**`Drivetrain.drive(x, y, rot, slow)` contract:** sign-flipping is the caller's job. The method takes pre-flipped values in the FTC convention (`+x` = forward, `+y` = left, `+rot` = counterclockwise). `TeleOpDriveCommand` owns the stick-to-axis mapping.
+
+Localizer selection — see §7.
 
 ### 6.2 `Intake`
 
-Owns the `intake` DcMotor.
+Owns `intakeOne` and `intakeTwo` (CRServo). Today's bindings set each servo to `-1.0` when its bumper is held, and both to `+1.0` when `gamepad2.x` is held (the clear-jam macro).
 
-- `setPower(double power)`
-- `periodic()` — no-op
+Public API:
+- `setOnePower(double power)`
+- `setTwoPower(double power)`
+- `stop()` — both to 0.
+- `periodic()` — no-op.
 
 ### 6.3 `Shooter`
 
-Owns the `launcher` DcMotor (reversed, matching current wiring).
-
-- `setPower(double power)`
-- `periodic()` — no-op
-
-### 6.4 `Holder`
-
-Owns the `paddleOne` Servo and the `paddle1` ColorSensor. Bundles sensor + actuator because they're physically co-located and only meaningful together.
+Owns `launcherOne` and `launcherTwo` (DcMotorEx, velocity-controlled). "Smart" subsystem (user's choice, Option A): knows the three preset fire modes internally. Live PIDF tuning preserved — on every tick, `periodic()` reads the `@Config` PIDF coefficients (`SHOOTER.oneP`, `SHOOTER.oneF`, `SHOOTER.twoP`, `SHOOTER.twoF`) and re-applies them to both motors. That matches the current behavior of `DriveCodeCommon.shooter()` applying coefficients every loop from `PID_Tune`/`PID_Tune2`.
 
 Public API:
+- `shootNear()` — sets velocity to `(1500, 750)` (bottom, top).
+- `shootFar()` — sets velocity to `(950, 1450)`.
+- `shootClear()` — sets velocity to `(10000, 10000)`. Does **not** touch the LED; that coupling lives in `ShootClearCommand` via `Indicator` (see §8).
+- `reverse()` — sets velocity to `(-500, -500)` (used by `ClearJamCommand`).
+- `stop()` — sets velocity to `(0, 0)`.
+- `periodic()` — applies live PIDF every tick.
 
-- `detectBall() : BallState` where `BallState ∈ {NONE, PURPLE, GREEN}`. Encapsulates the RGB-threshold logic currently inline in `DriveCodeCommon.holder()`. Thresholds (`PURPLE_RED_MIN`, `PURPLE_BLUE_MIN`, `PURPLE_GREEN_MAX`, `GREEN_GREEN_MIN`, `GREEN_RED_MAX`, `GREEN_BLUE_MAX`) become tunable `@Config` constants on this class.
-- `setPaddle(PaddleState state)` where `PaddleState ∈ {WAITING, CATCH, LAUNCH}`. Wraps the three servo positions currently named `paddlewaiting`, `padllecatch`, `paddlelaunch`.
-- `periodic()` — no-op. The "catch on detect" policy lives in `HolderAutoCommand`, not here.
+Preset speeds and PIDF coefficients are `public static` fields on a nested `@Config` class so FTC Dashboard can tune them live.
 
-All four subsystems are `@Config` so dashboard users can tune constants live.
+### 6.4 `Pusher`
+
+Owns `pusherWheel` (CRServo, hardware name `"pusherwheel"`).
+
+Public API:
+- `setPower(double power)` — `-1.0` to push, `+1.0` for clear-jam reverse, `0.0` for idle.
+- `periodic()` — no-op.
+
+### 6.5 `Indicator`
+
+Owns `blinkin` (RevBlinkinLedDriver). Used both for alliance display (idle) and for the shoot-clear blue flash.
+
+Public API:
+- `setPattern(RevBlinkinLedDriver.BlinkinPattern pattern)`.
+- `allianceColor(AllianceColor alliance)` — helper: sets RED or BLUE pattern per alliance.
+- `periodic()` — no-op.
+
+### 6.6 Shared constraints
+
+All five subsystems are `@Config` so their tunable constants (preset speeds, PIDF coefficients, localizer tuning) are live-editable in FTC Dashboard.
 
 ## 7. Localizer abstraction (three dead wheels + Pinpoint)
 
-One TeleOp, two localizer options, swap via FTC Dashboard at Init time:
+One TeleOp, two localizer options, swap via FTC Dashboard at Init:
 
 ```java
 @Config
 public class Drivetrain {
     public enum LocalizerType { THREE_DEAD_WHEEL, PINPOINT }
     public static LocalizerType LOCALIZER = LocalizerType.THREE_DEAD_WHEEL;
-    // nested @Config structs:
-    public static class ThreeWheelParams { /* par_ticks_per_inch, perp_ticks_per_inch, par0_y, par1_y, perp_x — all TODO */ }
-    public static class PinpointParams   { /* pod X/Y offsets, encoder resolution — all TODO */ }
-    // ...
+
+    public static class ThreeWheelParams {
+        public double parTicksPerInch, perpTicksPerInch;
+        public double par0_y, par1_y, perp_x;
+        public DcMotorSimple.Direction par0Dir, par1Dir, perpDir;
+    }
+    public static class PinpointParams {
+        public double podXOffsetMM, podYOffsetMM;
+        public GoBildaPinpointDriver.EncoderDirection parDir, perpDir;
+        public double ticksPerMM;
+        public double yawScalar;
+    }
 }
 ```
 
-In the `Drivetrain` constructor, a small switch builds the Pedro `Follower` with the matching Pedro localizer:
+Constructor switches on `LOCALIZER` to build the Pedro `Follower` with either Pedro's `ThreeWheelLocalizer` (encoder ports `par0`, `par1`, `perp`) or Pedro's `PinpointLocalizer` (I²C device `pinpoint`).
 
-- `THREE_DEAD_WHEEL` → Pedro's `ThreeWheelLocalizer`, encoder ports `par0`, `par1`, `perp`.
-- `PINPOINT` → Pedro's `PinpointLocalizer`, I²C device name `pinpoint`.
-
-**Important:** Pedro localizers are not drop-in replacements for the Road Runner versions in this repo (`ThreeDeadWheelLocalizer.java`, `PinpointLocalizer.java`). Sign conventions and constant names differ. All tuning values start as `TODO` placeholders and must be re-derived by running Pedro's tuning routines on the robot. A teaching comment in each Pedro config points to the corresponding RR class for diff/comparison.
+**Important:** Pedro's localizer constants do not equal Road Runner's. All values start as placeholders and must be re-derived by running Pedro's tuning routines. A teaching comment in each parameter block points to the corresponding RR class so students can see the delta.
 
 ## 8. Commands
 
-Commands are verbs. Each declares which subsystems it **requires** (for scheduler exclusion) and implements `initialize()` / `execute()` / `end(interrupted)` / `isFinished()`.
+Commands are verbs. Each declares which subsystems it **requires**, implements `initialize()` / `execute()` / `end(interrupted)` / `isFinished()`.
 
-### 8.1 Default commands (run whenever no other command uses the subsystem)
+### 8.1 Default commands
 
-- **`TeleOpDriveCommand`** (requires `Drivetrain`) — reads `gamepad1` sticks + `right_bumper` and calls `drivetrain.drive(x, y, rot, slow)` every tick. Never finishes. Interrupted when a driver-assist command claims `Drivetrain`.
-- **`ShooterRunCommand`** (requires `Shooter`) — calls `shooter.setPower(-1.0)` every tick. Mirrors today's always-on launcher. Stops cleanly on OpMode end (scheduler calls `end(true)`).
-- **`HolderAutoCommand`** (requires `Holder`) — every tick: read `holder.detectBall()`. If `PURPLE` or `GREEN` or `gamepad2.dpad_right` held → `setPaddle(CATCH)`; else `setPaddle(WAITING)`. Direct port of `DriveCodeCommon.holder()`.
+- **`TeleOpDriveCommand`** (requires `Drivetrain`). Every tick reads `gamepad1` and calls `drivetrain.drive(-lsY, -lsX, -rsX, rb)`. Never finishes. Interrupted when any driver-assist claims `Drivetrain`.
+- **`IndicatorDefaultCommand`** (requires `Indicator`). Every tick sets alliance color. Allows momentary overrides like `ShootClearCommand` to paint blue; default resumes when override ends.
 
-### 8.2 Triggered commands
+No default commands on `Intake`, `Shooter`, or `Pusher` — idle is "stopped," which is exactly what a non-running subsystem already is.
 
-- **`IntakeCommand`** (requires `Intake`) — `initialize()` sets power to `1.0`; `end()` sets `0.0`. Bound to `gamepad2.right_bumper` with `.whileTrue(...)`.
-- **`ResetPoseCommand`** (requires `Drivetrain`) — one-shot. `initialize()` calls `drivetrain.setPose(STARTING_POSE)`; `isFinished()` returns `true` immediately.
-- **`PathToPoseCommand`** (requires `Drivetrain`) — constructor takes a target `Pose`.
-  - `initialize()`: build a straight-line `PathChain` from `drivetrain.getPose()` to the target and call `drivetrain.followPath(path)`.
-  - `execute()`: no-op (`Drivetrain.periodic()` already advances the follower).
-  - `isFinished()`: returns `!drivetrain.isFollowing() || driverOverride(gamepad1)`. `driverOverride` is a small static helper that checks whether any drive stick is past a 0.1 deadband. This gives the driver a one-touch cancel even though the command holds the `Drivetrain` requirement.
-  - `end(interrupted)`: `drivetrain.cancel()`.
-- **`SnapToAprilTagCommand`** (requires `Drivetrain`; uses `LimelightVision` as a non-requirement dependency) — constructor takes a `TargetType` enum (`NEAREST_PILLAR` or `CENTER_TAG`).
-  - `initialize()`: query `LimelightVision` for a matching visible target. If none, set `abort=true`. Otherwise compute a standoff pose (`tag_pose - STANDOFF_INCHES` along the tag normal) and start a Pedro path to it.
-  - `execute()`, `isFinished()`, `end()`: identical cancel-on-stick behavior as `PathToPoseCommand`. If `abort`, `isFinished()` returns immediately.
+### 8.2 Triggered commands — gamepad 2 (operator)
 
-Both path-following commands share a small `FollowToPose` helper on `Drivetrain` so the `PathChain`-building and `followPath` call live in one place.
+- **`IntakeOneRunCommand`** (requires `Intake`). `initialize()` → `setOnePower(-1.0)`; `end()` → `setOnePower(0)`. `.whileTrue(gamepad2.right_bumper)`.
+- **`IntakeTwoRunCommand`** (requires `Intake`). Mirror of the above for `intakeTwo`. `.whileTrue(gamepad2.left_bumper)`.
+- **`ClearJamCommand`** (requires `Intake`, `Shooter`, `Pusher`). `initialize()`: both intakes `+1.0`, `shooter.reverse()`, pusher `+1.0`. `end()`: all three stopped. `.whileTrue(gamepad2.x)`.
+- **`PushCommand`** (requires `Pusher`). `initialize()` → `setPower(-1.0)`; `end()` → `setPower(0)`. `.whileTrue(gamepad2.y)`.
+- **`ShootNearCommand`** (requires `Shooter`). `initialize()` → `shootNear()`; `end()` → `stop()`. `.whileTrue(gamepad2.right_trigger > 0.5)`.
+- **`ShootFarCommand`** — same shape, calls `shootFar()`. `.whileTrue(gamepad2.left_trigger > 0.5)`.
+- **`ShootClearCommand`** (requires `Shooter`, `Indicator`). `initialize()` → `shootClear()` + `indicator.setPattern(BLUE)`; `end()` → `shooter.stop()` + indicator default resumes. `.whileTrue(gamepad2.right_stick_button)`.
 
-### 8.3 Cancellation note
+**Conflict resolution.** Ivy's default is that a newly-scheduled command with overlapping requirements interrupts a running one. So if the driver goes from RT → LT, `ShootNearCommand` is interrupted (`end(true)` called, which calls `stop()`), and `ShootFarCommand` starts. This is the desired behavior and is called out as a teaching note in `RobotContainer`.
 
-Because driver-assist commands require `Drivetrain`, simply touching the stick does **not** cancel them — the default `TeleOpDriveCommand` can only run when nothing else requires `Drivetrain`. That's why `PathToPoseCommand.isFinished()` explicitly checks `driverOverride`. This is an intentional design choice and will be heavily commented.
+### 8.3 Triggered commands — gamepad 1 (driver)
+
+- **`ResetPoseCommand`** (requires `Drivetrain`). One-shot. `initialize()` calls `drivetrain.setPose(STARTING_POSE)`; `isFinished()` returns `true`. `.onTrue(gamepad1.back)`.
+- **`PathToPoseCommand`** (requires `Drivetrain`). Constructor takes a target `Pose`. `initialize()` builds a straight-line `PathChain` and calls `drivetrain.followPath(...)`. `execute()` is a no-op. `isFinished()` returns `!drivetrain.isFollowing() || driverOverride(gamepad1)`. `end()` calls `drivetrain.cancel()`. `.whileTrue(gamepad1.y)` → `PathToPoseCommand(SCORING_POSE)`.
+- **`SnapToAprilTagCommand`** (requires `Drivetrain`; uses `LimelightVision`). Constructor takes `TargetType` (`NEAREST_PILLAR` or `CENTER_TAG`) and the current `AllianceColor`. `initialize()` queries `LimelightVision.getPillarTarget(isRedAlliance)` or the center-tag equivalent. If not found, sets `abort = true` and `isFinished()` returns true immediately. Otherwise computes a standoff pose (§8.5) and starts a Pedro path to it. `.whileTrue(gamepad1.a)` → `SnapToAprilTagCommand(NEAREST_PILLAR, alliance)`.
+- **`ApproachShotCommand`** (requires `Drivetrain`; uses `LimelightVision`). Replaces today's `gamepad1.b` creep-forward behavior with a Pedro path. `initialize()` reads the pillar target and computes a path from current pose to a pose at `IDEAL_SHOOT_DISTANCE` inches standoff from the tag, heading aligned to the tag. `.whileTrue(gamepad1.b)`.
+
+Both `SnapToAprilTagCommand` and `ApproachShotCommand` use the same `driverOverride` cancel-on-stick as `PathToPoseCommand`.
+
+### 8.4 Cancellation semantics
+
+Because all three Drivetrain-claiming driver-assists require `Drivetrain`, the default `TeleOpDriveCommand` cannot run while one of them is active. Stick input is invisible to the scheduler. Each driver-assist therefore explicitly checks `driverOverride(gamepad1)` (any drive stick past 0.1 deadband) and returns `true` from `isFinished()` when the driver overrides — at which point the default command resumes. Heavily commented in code.
+
+### 8.5 Limelight → Pedro coordinate contract (important integration point)
+
+Pedro's `Pose` and Limelight's vision data live in different frames. The contract for both `SnapToAprilTagCommand` and `ApproachShotCommand`:
+
+1. **Source of truth for bot pose: Pedro's localizer.** We do NOT consume `limelight.getBotpose()` for driving — that would mix two localizers. Limelight is used only to produce a *relative* tag vector.
+2. **Target acquisition:** call `limelight.getPillarTarget(isRedAlliance)` (returns a `VisionTarget` with distance and angle from the camera's optical axis). The existing alliance-aware selection logic in `LimelightVision` is preserved and called with the alliance captured during INIT.
+3. **Compute standoff pose:** in Pedro's frame, current pose is `drivetrain.getPose()`. Target pose = current pose rotated by `pillarTag.getAngleToTarget()` and translated forward by `(pillarTag.getDistance() - STANDOFF_INCHES)`, heading = current heading + `pillarTag.getAngleToTarget()`. This keeps everything in Pedro's frame — no cross-frame transform needed.
+4. **If the tag is not visible at `initialize()`**, the command aborts immediately; there's no search-spin fallback (the current code's search behavior is dropped — call that out explicitly).
+5. Standoff constants (`STANDOFF_INCHES`, `IDEAL_SHOOT_DISTANCE`) live in `RobotContainer` as `public static` `@Config` fields. `IDEAL_SHOOT_DISTANCE` starts at 97.0 to match the current value in `DriveCodeCommon`.
+
+### 8.6 Scheduler lifecycle at OpMode start / end
+
+- In `PedroTeleOp.runOpMode()`, the first action after `waitForStart()` is `Scheduler.getInstance().reset()` (or the equivalent Ivy call — exact API TBD in implementation plan). This clears any residual subsystems, commands, or triggers registered by a previous OpMode run, which matters because FTC runs sequential OpModes in the same JVM.
+- `RobotContainer` is constructed *after* the reset, so its subsystem registration happens on a clean scheduler.
+- At end of the loop, `scheduler.cancelAll()` interrupts any running commands so `end(true)` is called and hardware comes to a clean stop.
 
 ## 9. OpMode skeleton and button bindings
 
-### 9.1 `RobotContainer`
+### 9.1 `RobotContainer` API
 
-One file. Instantiates the four subsystems, registers default commands, and binds triggers → commands. The only place the reader needs to look to answer "what does each button do?"
+Constructor: `RobotContainer(HardwareMap hw, Gamepad g1, Gamepad g2, AllianceColor alliance, Telemetry t)`.
+
+Public methods:
+- `void pollTelemetry(Telemetry t)` — each tick, adds pose, vision status, alliance, and any in-flight command name to telemetry.
+- `Drivetrain drivetrain()` / `LimelightVision vision()` — test hooks for the bring-up TeleOp.
 
 Preset constants at the top:
-
 ```java
-public static final Pose STARTING_POSE = new Pose(0, 0, 0);           // TODO: tune on field
-public static final Pose SCORING_POSE  = new Pose(24, 0, 0);          // TODO: tune on field (placeholder = 24" forward)
-public static final double APRILTAG_STANDOFF_INCHES = 24.0;           // TODO: tune on field
+public static final Pose STARTING_POSE = new Pose(0, 0, 0);       // TODO: tune on field
+public static final Pose SCORING_POSE  = new Pose(24, 0, 0);      // TODO: tune on field
+public static final double APRILTAG_STANDOFF_INCHES = 24.0;       // TODO: tune on field
+public static final double DRIVER_OVERRIDE_DEADBAND = 0.1;
 ```
 
 ### 9.2 `PedroTeleOp.runOpMode()`
@@ -197,82 +270,112 @@ public static final double APRILTAG_STANDOFF_INCHES = 24.0;           // TODO: t
 @TeleOp(name = "Pedro TeleOp", group = "pedro")
 public class PedroTeleOp extends LinearOpMode {
     @Override public void runOpMode() {
-        RobotContainer robot = new RobotContainer(hardwareMap, gamepad1, gamepad2);
-        Scheduler scheduler = Scheduler.getInstance();
-        telemetry.addLine("Pedro TeleOp ready"); telemetry.update();
+        AllianceColor alliance = AllianceColor.BLUE;
+        while (!isStarted() && !isStopRequested()) {
+            if (gamepad1.dpad_left)  alliance = AllianceColor.BLUE;
+            if (gamepad1.dpad_right) alliance = AllianceColor.RED;
+            telemetry.addData("Alliance", alliance);
+            telemetry.addLine("Press LEFT for BLUE, RIGHT for RED");
+            telemetry.update();
+        }
         waitForStart();
-        while (opModeIsActive() && !isStopRequested()) {
-            scheduler.run();                  // evaluates triggers, runs commands + subsystem periodic()
+        if (isStopRequested()) return;
+
+        Scheduler scheduler = Scheduler.getInstance();
+        scheduler.reset();
+        RobotContainer robot = new RobotContainer(hardwareMap, gamepad1, gamepad2, alliance, telemetry);
+
+        while (opModeIsActive()) {
+            scheduler.run();
             robot.pollTelemetry(telemetry);
             telemetry.update();
         }
-        scheduler.cancelAll();                // graceful end: interrupts all commands, calls end(true)
+        scheduler.cancelAll();
     }
 }
 ```
 
 ### 9.3 Gamepad bindings
 
-| Trigger | Command | Binding type |
+| Trigger | Command | Binding |
 |---|---|---|
-| `gamepad1` left stick, right stick X, right bumper | `TeleOpDriveCommand` | default on `Drivetrain` |
-| `gamepad1.a` held | `PathToPoseCommand(SCORING_POSE)` | `.whileTrue(...)` |
-| `gamepad1.b` held | `SnapToAprilTagCommand(NEAREST_PILLAR)` | `.whileTrue(...)` |
-| `gamepad1.y` held | `SnapToAprilTagCommand(CENTER_TAG)` | `.whileTrue(...)` |
-| `gamepad1.back` pressed | `ResetPoseCommand` | `.onTrue(...)` |
-| `gamepad2.right_bumper` held | `IntakeCommand` | `.whileTrue(...)` |
-| `gamepad2.dpad_right` | read inside `HolderAutoCommand` | — |
+| `gamepad1` sticks + RB | `TeleOpDriveCommand` | default on `Drivetrain` |
+| `gamepad1.a` held | `SnapToAprilTagCommand(NEAREST_PILLAR, alliance)` | `.whileTrue` |
+| `gamepad1.b` held | `ApproachShotCommand` | `.whileTrue` |
+| `gamepad1.y` held | `PathToPoseCommand(SCORING_POSE)` | `.whileTrue` |
+| `gamepad1.back` pressed | `ResetPoseCommand` | `.onTrue` |
+| `gamepad1.dpad_left/right` | *(INIT only — alliance select)* | — |
+| `gamepad2.right_bumper` held | `IntakeOneRunCommand` | `.whileTrue` |
+| `gamepad2.left_bumper` held | `IntakeTwoRunCommand` | `.whileTrue` |
+| `gamepad2.x` held | `ClearJamCommand` | `.whileTrue` |
+| `gamepad2.y` held | `PushCommand` | `.whileTrue` |
+| `gamepad2.right_trigger > 0.5` | `ShootNearCommand` | `.whileTrue` |
+| `gamepad2.left_trigger > 0.5` | `ShootFarCommand` | `.whileTrue` |
+| `gamepad2.right_stick_button` held | `ShootClearCommand` | `.whileTrue` |
 
-Students can rebind by editing `RobotContainer` only.
+Rebinding is done in `RobotContainer` only.
+
+**Intentional behavior changes from current `DriveCode`:**
+- `gamepad1.a` changes from **toggle** to **hold**. Hold-to-run is idiomatic in command-based and removes the need for the `autoAlignActive` / `prevButtonA` / 5000 ms timeout state machine. If toggle is required, we can add it later.
+- `gamepad1.b` still holds-to-run, but now does a proper path to standoff instead of a proportional-gain creep. Feels more precise.
+- The "search spin" fallback in `autoAlign` when no tag is visible is dropped — `SnapToAprilTagCommand` aborts cleanly instead of spinning the robot.
 
 ## 10. Verification plan
 
-On-robot only (no unit tests). Each step is a Go/No-Go gate.
+On-robot only. Each step is a Go/No-Go gate.
 
-1. **Compile.** `./gradlew :TeamCode:assembleDebug` passes.
-2. **`PedroBringUpTeleOp`.** A debug-only TeleOp that registers `RobotContainer` with **no driver-assist bindings** — only default commands. Confirms (a) Pedro + Ivy resolve on-device, (b) subsystems initialize, (c) manual feel matches today's `DriveCode`. *If this feels the same as `DriveCode`, the port is correct.*
-3. **Localizer check.** In `PedroBringUpTeleOp`, stream `drivetrain.getPose()` to FTC Dashboard. Drive forward 24", strafe 24", turn 360°, return to start. Pose should return near origin. If not, run Pedro's tuning routines and fill in `ThreeWheelParams` values.
-4. **Reset-pose check.** Enable the Back → `ResetPoseCommand(Pose(0,0,0))` binding. Drive around. Press Back. Pose snaps to origin.
-5. **Path-to-pose check.** `SCORING_POSE = (24, 0, 0)`. Hold A. Robot drives 24" forward and stops. Touching the stick cancels immediately. Only after this passes, replace with real field coordinates.
-6. **Snap-to-AprilTag check.** Place a pillar tag (20 or 24) in view. Hold B with `STANDOFF_INCHES = 36` so misalignment is obvious before the bot gets close. Once stable, tune standoff down.
+1. **Compile.** `./gradlew :TeamCode:assembleDebug` passes with Pedro + Ivy dependencies added.
+2. **`PedroBringUpTeleOp`.** Debug-only `@TeleOp` that registers `RobotContainer` but **binds only the default commands** — no driver-assists, no intake/shooter buttons. Confirms Pedro + Ivy resolve on-device, subsystems initialize, and manual drive feels identical to today's `DriveCode` drive portion. *If drive feel matches, hardware layer is correct.*
+3. **Localizer check.** In `PedroBringUpTeleOp`, stream `drivetrain.getPose()` to FTC Dashboard. Drive forward 24", strafe 24", turn 360°, return to start. Pose should return near origin. If not, run Pedro's tuning routines and fill in `ThreeWheelParams`.
+4. **Intake / shooter / pusher / indicator.** Enable those bindings. Verify each button mirrors current `DriveCode` behavior: both intake directions, all three fire modes, clear-jam macro, pusher, blue-flash-on-clear.
+5. **Reset-pose check.** Bind Back → `ResetPoseCommand(Pose(0,0,0))`. Drive around. Press Back. Pose snaps to origin.
+6. **Path-to-pose check.** `SCORING_POSE = (24, 0, 0)` for the first test. Hold Y. Robot drives 24" forward and stops. Bumping the stick cancels immediately.
+7. **Snap-to-AprilTag check.** Place a pillar tag in view. Hold A with `APRILTAG_STANDOFF_INCHES = 36` so misalignment is obvious before the bot gets close. Tune down once stable.
+8. **Approach-shot check.** Place a pillar tag in view. Hold B. Robot paths to `IDEAL_SHOOT_DISTANCE = 97` from the tag. Verify with tape-measured distance.
 
 ## 11. Teaching-comment style
 
-The user's stated goal is "good explanations in the code that take us step by step into how to build it out." Comment policy for the new `pedro/` code:
-
-- **File-level doc-comment** on every new class: one short paragraph explaining why the file exists and what role it plays in command-based. Reading only the headers in package order should give the full architecture.
-- **Inline `// TEACHING NOTE:` comments** at non-obvious decision points. Concrete planned teaching notes:
-  - In `Drivetrain.followPath(...)`: why `follower.update()` is in `periodic()` and not in the path command's `execute()`.
-  - In `PathToPoseCommand.isFinished()`: why `driverOverride` is needed even though the driver is "moving the stick."
-  - In `RobotContainer`: the difference between `.whileTrue(...)` and `.onTrue(...)`.
-  - In `Drivetrain` localizer switch: why this is a strategy pattern and when that stops scaling.
-  - In `PedroTeleOp.runOpMode()`: what `scheduler.run()` actually does every tick.
-- **No narration** of code that already says what it does.
-- Teaching notes use the `TEACHING NOTE:` prefix so they're greppable and strippable.
+- **File-level doc-comment** on every new class: one paragraph explaining the file's role in command-based. Reading headers in package order gives the full architecture.
+- **Inline `// TEACHING NOTE:` comments** at non-obvious decision points. Planned notes:
+  - `Drivetrain.followPath(...)`: why `follower.update()` is in `periodic()` and not in the command's `execute()`.
+  - `PathToPoseCommand.isFinished()`: why `driverOverride` is needed even though the driver is moving the stick.
+  - `RobotContainer`: difference between `.whileTrue(...)` and `.onTrue(...)`.
+  - `Drivetrain` localizer switch: what a strategy pattern is and when it stops scaling.
+  - `PedroTeleOp.runOpMode()`: what `scheduler.run()` actually does each tick, and why `scheduler.reset()` matters for FTC's sequential-OpMode JVM lifecycle.
+  - `Shooter.periodic()`: why PIDF coefficients are re-applied every tick (live tuning), mirroring the current `shooter()` behavior.
+  - `SnapToAprilTagCommand`: the Limelight → Pedro coordinate contract.
+- **No narration** of self-evident code.
+- Teaching notes use the `TEACHING NOTE:` prefix for grep/strip.
 
 ## 12. Assumptions and open questions
 
-- Only one OpMode runs at a time in FTC → Pedro + Road Runner can coexist in the project without runtime conflict. ✓
-- FTC SDK version in `FtcRobotController` is compatible with Pedro 2.1.1 — must be verified during the implementation plan.
-- Preset poses and standoff distance are `TODO` — tuned on the field.
-- Pedro's three-wheel and Pinpoint tuning constants are `TODO` — derived on the robot.
-- Gamepad assignments in §9.3 are reasonable defaults and easy to rebind in `RobotContainer`.
+- Only one OpMode runs at a time → Pedro + RR can coexist in the project. ✓
+- FTC SDK version compatible with Pedro 2.1.1 — verified during implementation plan.
+- All preset values (poses, standoff, PIDF, localizer constants) start as placeholders and are tuned on the field. The design enumerates the interfaces, not the tuned values.
+- Ivy's `Scheduler` exposes a way to reset per-OpMode (singleton reset or new instance). Exact API confirmed in implementation plan; if reset isn't available, we create a new `RobotContainer` per OpMode run and rely on subsystem re-registration idempotency.
 
-## 13. Out-of-scope follow-ups
+## 13. Quirks preserved from current `DriveCode`
 
-Potential future work, not part of this spec:
+Behaviors that are surprising but intentionally mirrored so the new TeleOp is a true port:
+
+- **Crossed motor hardwareMap.** `MecanumDrive.java:238-241` assigns Java field `leftFront` from hardware name `"rightFront"`, and similarly swaps the other three. The new `Drivetrain` will reproduce this exact mapping so the existing Robot Controller configuration file needs no changes. A comment documents why.
+- **Blinkin is always BLUE during shoot-clear**, regardless of alliance. Today's code hard-codes `BlinkinPattern.BLUE`; we keep that.
+- **`pusherwheel`** is lowercase in the hardware config — preserved verbatim.
+- **Intake reverse on `gamepad2.x`** also reverses the launchers and pushes the pusher — it's a "clear everything" macro. New `ClearJamCommand` does all three in one command.
+
+## 14. Out-of-scope follow-ups
 
 - Migrate autonomous off Road Runner onto Pedro (separate spec).
-- Spline-based `PathToPoseCommand` for curved approaches.
-- Additional driver-assist commands (e.g., "shoot sequence" chaining path + launcher + paddle).
-- Removing Road Runner from the project once autonomous is migrated.
+- Splines in `PathToPoseCommand` for curved approaches.
+- Toggle-style auto-align (press-once-to-engage, press-again-to-disengage) if drivers prefer it over hold-to-run.
+- Search-spin fallback if `SnapToAprilTagCommand` doesn't see a tag.
+- "Shoot sequence" macros chaining path + shooter + pusher.
+- Eventually removing Road Runner once autonomous is migrated.
 
-## 14. Success criteria
+## 15. Success criteria
 
-The design is successful if, after implementation and tuning:
-
-1. `PedroTeleOp` feels identical to `DriveCode` in manual driving, intake, launcher, and paddle-catch behavior.
-2. All three driver-assist actions work: path to preset pose, snap to AprilTag, reset pose.
-3. Swapping `Drivetrain.LOCALIZER` at Init time between `THREE_DEAD_WHEEL` and `PINPOINT` works without code changes.
-4. A team member unfamiliar with command-based can read the `pedro/` package header comments in order and explain the architecture back.
-5. The existing Road Runner code and `DriveCode` still build and run unchanged.
+1. `PedroTeleOp` reproduces every behavior in today's `DriveCode` (drive, both intakes, intake-reverse, all three fire modes, pusher, clear-jam macro, live PIDF, alliance select, blinkin behaviors).
+2. The three driver-assist commands work: path to preset pose, snap to AprilTag (replacing `autoAlign`), approach-to-shot distance (replacing the creep-forward).
+3. Swapping `Drivetrain.LOCALIZER` between `THREE_DEAD_WHEEL` and `PINPOINT` works without code edits.
+4. A team member unfamiliar with command-based can read the `pedro/` package headers in order and explain the architecture.
+5. `DriveCode`, `MecanumDrive`, `BlueAuto`, and all `Old_*` files still build and run unchanged.
