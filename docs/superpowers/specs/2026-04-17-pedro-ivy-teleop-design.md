@@ -14,7 +14,7 @@ This design adds a second TeleOp built on Pedro Pathing + Ivy that reproduces ev
 
 1. A new TeleOp (`@TeleOp(name = "Pedro TeleOp")`) that ports **every** behavior in today's `DriveCode`:
    - Mecanum driving with slow-mode (`gamepad1.right_bumper`).
-   - Two independent intake CRServos (`gamepad2.right_bumper`, `gamepad2.left_bumper`), with an intake-reverse on `gamepad2.x`.
+   - Two independent intake CRServos (`gamepad2.right_bumper`, `gamepad2.left_bumper`). Note: there is no standalone intake-reverse; `gamepad2.x` is the multi-subsystem clear-jam macro (§13).
    - Two-wheel launcher with three fire modes (near / far / clear) driven by `gamepad2.right_trigger` / `left_trigger` / `right_stick_button`.
    - Pusher wheel on `gamepad2.y`.
    - Clear-jam macro on `gamepad2.x`: both intakes forward, both launchers reversed, pusher forward.
@@ -221,7 +221,7 @@ No default commands on `Intake`, `Shooter`, or `Pusher` — idle is "stopped," w
 
 - **`ResetPoseCommand`** (requires `Drivetrain`). One-shot. `initialize()` calls `drivetrain.setPose(STARTING_POSE)`; `isFinished()` returns `true`. `.onTrue(gamepad1.back)`.
 - **`PathToPoseCommand`** (requires `Drivetrain`). Constructor takes a target `Pose`. `initialize()` builds a straight-line `PathChain` and calls `drivetrain.followPath(...)`. `execute()` is a no-op. `isFinished()` returns `!drivetrain.isFollowing() || driverOverride(gamepad1)`. `end()` calls `drivetrain.cancel()`. `.whileTrue(gamepad1.y)` → `PathToPoseCommand(SCORING_POSE)`.
-- **`SnapToAprilTagCommand`** (requires `Drivetrain`; uses `LimelightVision`). Constructor takes `TargetType` (`NEAREST_PILLAR` or `CENTER_TAG`) and the current `AllianceColor`. `initialize()` queries `LimelightVision.getPillarTarget(isRedAlliance)` or the center-tag equivalent. If not found, sets `abort = true` and `isFinished()` returns true immediately. Otherwise computes a standoff pose (§8.5) and starts a Pedro path to it. `.whileTrue(gamepad1.a)` → `SnapToAprilTagCommand(NEAREST_PILLAR, alliance)`.
+- **`SnapToAprilTagCommand`** (requires `Drivetrain`; uses `LimelightVision`). V1 scope: pillar tags only. Constructor takes `AllianceColor`. `initialize()` calls `LimelightVision.getPillarTarget(isRedAlliance)`; if the returned `VisionTarget` is not found, sets `abort = true` and `isFinished()` returns true immediately. Otherwise computes a standoff pose (§8.5) and starts a Pedro path to it. `.whileTrue(gamepad1.a)` → `SnapToAprilTagCommand(alliance)`. Center-tag snap is deferred (§14) because `LimelightVision.readCenterAprilTag()` today returns a list of `BallColor`, not a `VisionTarget` — adding a positional center-tag API is follow-up work.
 - **`ApproachShotCommand`** (requires `Drivetrain`; uses `LimelightVision`). Replaces today's `gamepad1.b` creep-forward behavior with a Pedro path. `initialize()` reads the pillar target and computes a path from current pose to a pose at `IDEAL_SHOOT_DISTANCE` inches standoff from the tag, heading aligned to the tag. `.whileTrue(gamepad1.b)`.
 
 Both `SnapToAprilTagCommand` and `ApproachShotCommand` use the same `driverOverride` cancel-on-stick as `PathToPoseCommand`.
@@ -236,7 +236,11 @@ Pedro's `Pose` and Limelight's vision data live in different frames. The contrac
 
 1. **Source of truth for bot pose: Pedro's localizer.** We do NOT consume `limelight.getBotpose()` for driving — that would mix two localizers. Limelight is used only to produce a *relative* tag vector.
 2. **Target acquisition:** call `limelight.getPillarTarget(isRedAlliance)` (returns a `VisionTarget` with distance and angle from the camera's optical axis). The existing alliance-aware selection logic in `LimelightVision` is preserved and called with the alliance captured during INIT.
-3. **Compute standoff pose:** in Pedro's frame, current pose is `drivetrain.getPose()`. Target pose = current pose rotated by `pillarTag.getAngleToTarget()` and translated forward by `(pillarTag.getDistance() - STANDOFF_INCHES)`, heading = current heading + `pillarTag.getAngleToTarget()`. This keeps everything in Pedro's frame — no cross-frame transform needed.
+3. **Compute standoff pose** in Pedro's frame. Let `(x0, y0, h0)` = `drivetrain.getPose()`, `d` = `pillarTag.getDistance()`, `a` = `pillarTag.getAngleToTarget()` (radians, from `LimelightVision`'s `calculateAngleRadians`), `s` = `APRILTAG_STANDOFF_INCHES`. Then:
+   - `targetHeading = h0 + a`
+   - `targetX = x0 + (d - s) * cos(targetHeading)`
+   - `targetY = y0 + (d - s) * sin(targetHeading)`
+   This is a pure computation in Pedro's frame; no cross-frame transform is needed because Limelight's output is relative to the camera, and we consume it as a delta from Pedro's current pose.
 4. **If the tag is not visible at `initialize()`**, the command aborts immediately; there's no search-spin fallback (the current code's search behavior is dropped — call that out explicitly).
 5. Standoff constants (`STANDOFF_INCHES`, `IDEAL_SHOOT_DISTANCE`) live in `RobotContainer` as `public static` `@Config` fields. `IDEAL_SHOOT_DISTANCE` starts at 97.0 to match the current value in `DriveCodeCommon`.
 
@@ -300,7 +304,7 @@ public class PedroTeleOp extends LinearOpMode {
 | Trigger | Command | Binding |
 |---|---|---|
 | `gamepad1` sticks + RB | `TeleOpDriveCommand` | default on `Drivetrain` |
-| `gamepad1.a` held | `SnapToAprilTagCommand(NEAREST_PILLAR, alliance)` | `.whileTrue` |
+| `gamepad1.a` held | `SnapToAprilTagCommand(alliance)` | `.whileTrue` |
 | `gamepad1.b` held | `ApproachShotCommand` | `.whileTrue` |
 | `gamepad1.y` held | `PathToPoseCommand(SCORING_POSE)` | `.whileTrue` |
 | `gamepad1.back` pressed | `ResetPoseCommand` | `.onTrue` |
@@ -330,7 +334,7 @@ On-robot only. Each step is a Go/No-Go gate.
 4. **Intake / shooter / pusher / indicator.** Enable those bindings. Verify each button mirrors current `DriveCode` behavior: both intake directions, all three fire modes, clear-jam macro, pusher, blue-flash-on-clear.
 5. **Reset-pose check.** Bind Back → `ResetPoseCommand(Pose(0,0,0))`. Drive around. Press Back. Pose snaps to origin.
 6. **Path-to-pose check.** `SCORING_POSE = (24, 0, 0)` for the first test. Hold Y. Robot drives 24" forward and stops. Bumping the stick cancels immediately.
-7. **Snap-to-AprilTag check.** Place a pillar tag in view. Hold A with `APRILTAG_STANDOFF_INCHES = 36` so misalignment is obvious before the bot gets close. Tune down once stable.
+7. **Snap-to-AprilTag check.** Place a pillar tag in view. Hold A. For the very first run, temporarily override `APRILTAG_STANDOFF_INCHES` in FTC Dashboard to 36 (default in §9.1 is 24) so misalignment is obvious before the bot gets close. Restore to 24 once stable.
 8. **Approach-shot check.** Place a pillar tag in view. Hold B. Robot paths to `IDEAL_SHOOT_DISTANCE = 97` from the tag. Verify with tape-measured distance.
 
 ## 11. Teaching-comment style
@@ -369,6 +373,7 @@ Behaviors that are surprising but intentionally mirrored so the new TeleOp is a 
 - Splines in `PathToPoseCommand` for curved approaches.
 - Toggle-style auto-align (press-once-to-engage, press-again-to-disengage) if drivers prefer it over hold-to-run.
 - Search-spin fallback if `SnapToAprilTagCommand` doesn't see a tag.
+- Center-tag variant of `SnapToAprilTagCommand`. Requires adding a positional center-tag API to `LimelightVision` (currently `readCenterAprilTag()` only returns ball-color detections).
 - "Shoot sequence" macros chaining path + shooter + pusher.
 - Eventually removing Road Runner once autonomous is migrated.
 
