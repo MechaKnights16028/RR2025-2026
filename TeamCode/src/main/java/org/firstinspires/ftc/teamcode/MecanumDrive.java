@@ -256,7 +256,11 @@
             leftBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
             rightBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
             rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-    
+
+            launcherOne.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            launcherTwo.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+
             //launcher.setDirection(DcMotorSimple.Direction.REVERSE);
     
             leftBack.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
