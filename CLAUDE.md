@@ -49,40 +49,36 @@ The drive system uses a **Localizer pattern** for position tracking:
 
 ### TeleOp Structure
 
-- **`DriveCodeCommon`**: Base class containing shared teleop logic
-  - `drives()`: Main driving controls with speed modulation (right bumper for 50% speed)
-  - `intake()`: Intake control logic
+- **`DriveCodeCommon`** (`@Config`, extends `LinearOpMode`): Base class containing shared teleop logic and tunable field-detection thresholds (purple/green RGB mins/maxes, paddle servo positions).
+  - `drives()`: Mecanum driving; right bumper on gamepad1 halves speed.
+  - `intake()`: Runs the intake motor while gamepad2 right bumper is held.
+  - `shooter()`: Runs the launcher at full reverse power.
+  - `holder()`: Reads `paddle1` color sensor, moves `paddleOne` servo to `padllecatch` when purple or green is detected (or gamepad2 dpad_right is pressed), otherwise holds at `paddlewaiting`.
 
-- **`DriveCode`**: Main TeleOp OpMode that extends `DriveCodeCommon`
-  - Instantiates `MecanumDrive` with initial pose
-  - Runs drive and intake methods in main loop
+- **`DriveCode`**: Main `@TeleOp` that extends `DriveCodeCommon` and calls `drives`/`intake`/`holder`/`shooter` each loop iteration.
+
+Note: `Old_DriveCodeCommon`, `Old_Old_DriveCode`, `Old_BlueAuto` are prior-season references kept for comparison — prefer editing the non-`Old_` versions.
 
 ### Autonomous Structure
 
-- Road Runner `Action` system used for autonomous sequences
-- Actions can be composed with `SequentialAction` and `ParallelAction`
-- Example autonomous: `Old_BlueAuto.java` shows pattern of creating custom Action classes for subsystems (lift, intake bar, etc.)
-- Trajectories built using `TrajectoryActionBuilder` from `MecanumDrive`
+- Road Runner `Action` system used for autonomous sequences. Actions can be composed with `SequentialAction` / `ParallelAction` and run via `Actions.runBlocking(...)`.
+- Trajectories are built from `drive.actionBuilder(initialPose)` on `MecanumDrive`.
+- Active autos include `BlueAuto`, `BlueAutoClose`, `blueAutoTest`, and `Auto`. `Old_BlueAuto` demonstrates the pattern of wrapping subsystems (lift, intake bar) as custom `Action` classes.
 
 ### Vision System
 
 Located in `TeamCode/src/main/java/org/firstinspires/ftc/teamcode/vision/`:
 
-- **`LimelightVision`**: Main vision interface using Limelight3A camera
-  - **Pipeline 0**: AprilTag detection (tags 20-24)
-    - Left pillar: tag 20 (Blue alliance)
-    - Right pillar: tag 24 (Red alliance)
-    - Center tags: 21-23 (determine ball sequence)
-  - **Pipeline 1**: Purple ball detection
-  - **Pipeline 2**: Green ball detection
-  - **Calibration constants** (must be set for your robot):
-    - `LIMELIGHT_HEIGHT_INCHES`: Camera height from floor
-    - `LIMELIGHT_ANGLE_DEGREES`: Camera tilt angle
-    - `APRILTAG_HEIGHT_INCHES`: AprilTag center height
-    - `BALL_DIAMETER_INCHES`: Game ball diameter
+- **`LimelightVision`**: Main vision interface using Limelight3A camera. Pipeline assignments (see constants in the class):
+  - **Pipeline 0** `PIPELINE_PURPLE`: purple ball color detection
+  - **Pipeline 1** `PIPELINE_GREEN`: green ball color detection
+  - **Pipeline 2** `PIPELINE_PILLAR_TAGS`: pillar AprilTags (20 = left/Blue, 24 = right/Red)
+  - **Pipeline 3** `PIPELINE_CENTER_TAGS`: center AprilTags (21–23, determine ball sequence)
+  - **Pipeline 5** `PIPELINE_WHITELINE`: whiteline detection
+  - Calibration constants at the top of the class must be set per-robot: `LIMELIGHT_HEIGHT_INCHES`, `LIMELIGHT_ANGLE_DEGREES`, `APRILTAG_HEIGHT_INCHES`, `BALL_DIAMETER_INCHES`.
 
-- **`VisionTarget`**: Represents detected targets with position and distance
-- **`BallColor`** and **`TargetType`**: Enums for classification
+- **`VisionTarget`**, **`BallColor`**, **`TargetType`**: target representation and classification enums.
+- **`LimelightHttpClient`**, **`LimelightVisionAdapter`**: auxiliary HTTP/adapter plumbing used by `LimelightTestUI`.
 
 ### Message System
 
@@ -117,12 +113,16 @@ Dependencies are defined in `TeamCode/build.gradle` and pulled from `https://mav
 
 When writing code that accesses hardware:
 
-- **Drive motors**: Configured in `MecanumDrive` constructor (check hardware map names)
-- **IMU**: Requires `logoFacingDirection` and `usbFacingDirection` configuration in `MecanumDrive.Params`
-- **Limelight camera**: Hardware name accessed via `LimelightVision` constructor
-- **Subsystem motors/servos**: See `Old_BlueAuto.java` for examples (lift motors, intake bar servos, etc.)
+- **Drive motors** (`MecanumDrive`): `leftFront`, `leftBack`, `rightFront`, `rightBack` — all set to BRAKE, `rightFront` reversed.
+- **Subsystem hardware also owned by `MecanumDrive`** (not a separate subsystem class):
+  - `intake` (DcMotor)
+  - `launcher` (DcMotor, reversed)
+  - `paddleOne` (Servo)
+  - `paddle1` (ColorSensor) — used by `DriveCodeCommon.holder()` to auto-trigger the paddle on purple/green detection
+- **IMU**: `logoFacingDirection` / `usbFacingDirection` must be set in `MecanumDrive.Params` to match physical hub mounting.
+- **Limelight camera**: Accessed via `LimelightVision` constructor; configure the camera name in Robot Controller config.
 
-Always verify hardware names match the Robot Controller configuration.
+Hardware names in config must match exactly. Since drive-train and game-piece hardware all live in `MecanumDrive`, adding a new mechanism currently means extending that class rather than adding a separate subsystem.
 
 ## Development Notes
 

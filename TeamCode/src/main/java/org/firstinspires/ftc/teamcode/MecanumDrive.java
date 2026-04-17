@@ -67,7 +67,7 @@
                     RevHubOrientationOnRobot.UsbFacingDirection.UP;
     
             // drive model parameters
-            public double inPerTick = 8023;
+            public double inPerTick = 0.014501676637046403;
             public double lateralInPerTick = inPerTick;
             public double trackWidthTicks = 0;
     
