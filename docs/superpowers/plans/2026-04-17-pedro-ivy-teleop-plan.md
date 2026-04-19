@@ -27,6 +27,26 @@
 
 **Commit discipline:** One commit per task. Messages follow the existing repo style (see `git log --oneline -10`): short imperative subject, optional body. Commits always include the `Co-Authored-By:` trailer established in prior commits.
 
+**`TODO(API)` hygiene:** No committed file may contain the substring `TODO(API)`. Before every `git add`, run:
+```bash
+! grep -rn 'TODO(API)' TeamCode/src/main/java/org/firstinspires/ftc/teamcode/pedro/
+```
+If that prints any lines, resolve them against the Pedro/Ivy javadoc before committing.
+
+**Pre-chunk-1 API verification** (do once, after Task 1, before Task 3):
+
+The plan's "Confirmed Ivy API" list above was assembled from the public docs; actual jar contents are the source of truth. Before writing any Ivy-dependent code, inspect the jar:
+
+```bash
+./gradlew :TeamCode:dependencies --configuration releaseRuntimeClasspath | grep pedropathing
+IVY_JAR=$(find ~/.gradle/caches -name 'ivy-1.0.0.jar' 2>/dev/null | head -1)
+unzip -l "$IVY_JAR" | grep -E 'Command\.class|Scheduler\.class|EndCondition\.class|pedro/PedroCommands\.class'
+```
+
+Confirm the exact package paths for `Command`, `Scheduler`, `EndCondition`, `InterruptedBehavior`, `BlockedBehavior`, `ConflictBehavior`, and `PedroCommands`. If they differ from `com.pedropathing.ivy.*` / `com.pedropathing.ivy.pedro.*`, update the imports in all files this plan creates to match.
+
+Do the same for Pedro core (`core-2.1.1.jar`, `ftc-2.1.1.jar`) to confirm `Follower`, `Pose`, `PathChain`, `PathBuilder`, `ThreeWheelLocalizer`, and `PinpointLocalizer` packages before Task 9.
+
 ---
 
 ## File Structure
@@ -949,14 +969,26 @@ public class Drivetrain {
 
 - [ ] **Step 2: Resolve every `TODO(API)` against the Pedro docs and javadoc.**
 
-Walk the file top to bottom, replace every `TODO(API)` with the real Pedro 2.1.1 call. Do NOT leave any `TODO(API)` in code that the next compile step will run — they all throw `UnsupportedOperationException`.
+Walk the file top to bottom, replace every `TODO(API)` with the real Pedro 2.1.1 call. This task is **not complete** until:
 
-- [ ] **Step 3: Compile.**
+- `buildFollower(hw)` returns a working `Follower`, not a stub.
+- `buildLocalizer(hw)` returns the correct localizer instance for each `LocalizerType`.
+- `straightLineTo(target)` returns a real `PathChain` from the current pose to the target. Tasks 12, 13, and 14 depend on this; shipping a stub here means every driver-assist throws at runtime.
+- Pose field accessors (`getX()/getY()/getHeading()` vs. `.x/.y/.heading`) are settled. Record the answer as a one-line comment at the top of `Drivetrain.java`. Tasks 13, 14, and 15 reuse this answer.
+
+**HARD GATE:** If the Pedro 2.1.1 API for `Follower` construction, `PathBuilder`, or localizer wiring cannot be resolved from docs / javadoc / Pedro example repos after ~30 minutes of research, STOP. Do not proceed to Task 10. Ask for help — implementing the rest of the plan against a stubbed `Drivetrain` will produce compilation successes that fail immediately on-robot.
+
+- [ ] **Step 3: Verify no `TODO(API)` remains.**
+
+Run: `! grep -n 'TODO(API)' TeamCode/src/main/java/org/firstinspires/ftc/teamcode/pedro/subsystems/Drivetrain.java`
+Expected: no output (exit 0).
+
+- [ ] **Step 4: Compile.**
 
 Run: `./gradlew :TeamCode:assembleDebug`
-Expected: `BUILD SUCCESSFUL`. Any "cannot find symbol" on a Pedro class means the `TODO(API)` wasn't filled in correctly — re-check the import and class name from the docs/javadoc.
+Expected: `BUILD SUCCESSFUL`. Any "cannot find symbol" on a Pedro class means an import or class name is wrong — re-check against the javadoc.
 
-- [ ] **Step 4: Commit.**
+- [ ] **Step 5: Commit.**
 
 ```bash
 git add TeamCode/src/main/java/org/firstinspires/ftc/teamcode/pedro/subsystems/Drivetrain.java
@@ -1104,9 +1136,10 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 
 ### Task 11: Gamepad 2 triggered commands
 
-Seven short command classes. Each uses the Ivy `Command.build()` builder where possible — they're simple enough that the builder is cleaner than a full class. Only `ClearJamCommand` uses the builder pattern with three requirements.
+Seven short commands that share the same shape: while-held, run a Runnable; on release (or interrupt), run a different Runnable to stop hardware. Ivy's `Command.build()` builder *does not expose an end/onRelease hook* in the confirmed API (re-verify during pre-chunk-1 API verification — if it does, rewrite using the builder). To guarantee hardware stops on release, we extract a single `HeldActionCommand` helper that implements the full `Command` interface with an explicit `end()`.
 
 **Files:**
+- Create: `.../pedro/commands/HeldActionCommand.java`  *(shared helper)*
 - Create: `.../pedro/commands/IntakeOneRunCommand.java`
 - Create: `.../pedro/commands/IntakeTwoRunCommand.java`
 - Create: `.../pedro/commands/PushCommand.java`
@@ -1115,7 +1148,57 @@ Seven short command classes. Each uses the Ivy `Command.build()` builder where p
 - Create: `.../pedro/commands/ShootClearCommand.java`
 - Create: `.../pedro/commands/ClearJamCommand.java`
 
-- [ ] **Step 1: Create `IntakeOneRunCommand.java`.**
+- [ ] **Step 1: Create `HeldActionCommand.java` (the helper).**
+
+```java
+package org.firstinspires.ftc.teamcode.pedro.commands;
+
+import com.pedropathing.ivy.BlockedBehavior;
+import com.pedropathing.ivy.Command;
+import com.pedropathing.ivy.ConflictBehavior;
+import com.pedropathing.ivy.EndCondition;
+import com.pedropathing.ivy.InterruptedBehavior;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
+/**
+ * Runs a Runnable every tick, stops hardware via another Runnable on
+ * release/interrupt. Used by every "hold a button" command on gamepad2.
+ *
+ * TEACHING NOTE: we use this instead of Ivy's Command.build() because
+ * the builder (as documented) has no onEnd/setEnd hook — so a builder-
+ * based command would leave hardware running when the button is
+ * released. Explicit end() is the safe path.
+ */
+public final class HeldActionCommand implements Command {
+
+    private final Runnable onRun;
+    private final Runnable onStop;
+    private final Set<Object> requirements;
+
+    public HeldActionCommand(Runnable onRun, Runnable onStop, Object... reqs) {
+        this.onRun = onRun;
+        this.onStop = onStop;
+        this.requirements = Collections.unmodifiableSet(
+                new HashSet<>(Arrays.asList(reqs)));
+    }
+
+    @Override public void start() { }
+    @Override public void execute() { onRun.run(); }
+    @Override public boolean done() { return false; }
+    @Override public void end(EndCondition endCondition) { onStop.run(); }
+    @Override public Set<Object> requirements() { return requirements; }
+    @Override public int priority() { return 0; }
+    @Override public InterruptedBehavior interruptedBehavior() { return InterruptedBehavior.END; }
+    @Override public BlockedBehavior blockedBehavior() { return BlockedBehavior.CANCEL; }
+    @Override public ConflictBehavior conflictBehavior() { return ConflictBehavior.CANCEL; }
+}
+```
+
+- [ ] **Step 2: Create `IntakeOneRunCommand.java`.**
 
 ```java
 package org.firstinspires.ftc.teamcode.pedro.commands;
@@ -1124,27 +1207,19 @@ import com.pedropathing.ivy.Command;
 
 import org.firstinspires.ftc.teamcode.pedro.subsystems.Intake;
 
-/** gamepad2 right_bumper — runs intakeOne at -1.0. */
+/** gamepad2 right_bumper — runs intakeOne at -1.0, stops on release. */
 public final class IntakeOneRunCommand {
     private IntakeOneRunCommand() {}
     public static Command create(Intake intake) {
-        return Command.build()
-                .setExecute(() -> intake.setOnePower(-1.0))
-                .requiring(intake)
-                // no setDone -> runs forever until cancelled by GamepadTriggers
-                .build()
-                // TODO(API): verify Command.build().build() signature; may need a
-                // different terminator call. Uncomment when confirmed.
-                ;
+        return new HeldActionCommand(
+                () -> intake.setOnePower(-1.0),
+                intake::stopOne,
+                intake);
     }
 }
 ```
 
-**Note:** the `TODO(API)` marker indicates the implementer must verify the exact builder-terminator method name on `Command.build()`. The docs example shows `Command myCommand = Command.build().setExecute(...)` — it's unclear whether a terminator like `.build()` is needed. Resolve against the javadoc before compiling.
-
-For the remaining gamepad-2 commands, use the same pattern. Clean up each once the terminator is confirmed.
-
-- [ ] **Step 2: Create `IntakeTwoRunCommand.java`.**
+- [ ] **Step 3: Create `IntakeTwoRunCommand.java`.**
 
 ```java
 package org.firstinspires.ftc.teamcode.pedro.commands;
@@ -1153,18 +1228,19 @@ import com.pedropathing.ivy.Command;
 
 import org.firstinspires.ftc.teamcode.pedro.subsystems.Intake;
 
-/** gamepad2 left_bumper — runs intakeTwo at -1.0. */
+/** gamepad2 left_bumper — runs intakeTwo at -1.0, stops on release. */
 public final class IntakeTwoRunCommand {
     private IntakeTwoRunCommand() {}
     public static Command create(Intake intake) {
-        return Command.build()
-                .setExecute(() -> intake.setTwoPower(-1.0))
-                .requiring(intake);
+        return new HeldActionCommand(
+                () -> intake.setTwoPower(-1.0),
+                intake::stopTwo,
+                intake);
     }
 }
 ```
 
-- [ ] **Step 3: Create `PushCommand.java`.**
+- [ ] **Step 4: Create `PushCommand.java`.**
 
 ```java
 package org.firstinspires.ftc.teamcode.pedro.commands;
@@ -1173,20 +1249,19 @@ import com.pedropathing.ivy.Command;
 
 import org.firstinspires.ftc.teamcode.pedro.subsystems.Pusher;
 
-/** gamepad2 y — pushes at -1.0 while held. */
+/** gamepad2 y — pushes at -1.0 while held, stops on release. */
 public final class PushCommand {
     private PushCommand() {}
     public static Command create(Pusher pusher) {
-        return Command.build()
-                .setExecute(() -> pusher.setPower(-1.0))
-                .requiring(pusher);
+        return new HeldActionCommand(
+                () -> pusher.setPower(-1.0),
+                pusher::stop,
+                pusher);
     }
 }
 ```
 
-- [ ] **Step 4: Create `ShootNearCommand.java`, `ShootFarCommand.java`, `ShootClearCommand.java`.**
-
-Three near-identical files. `ShootClearCommand` also requires `Indicator` so it can flash blue (spec §13).
+- [ ] **Step 5: Create `ShootNearCommand.java`, `ShootFarCommand.java`, `ShootClearCommand.java`.**
 
 `ShootNearCommand.java`:
 
@@ -1197,13 +1272,14 @@ import com.pedropathing.ivy.Command;
 
 import org.firstinspires.ftc.teamcode.pedro.subsystems.Shooter;
 
-/** gamepad2 right_trigger > 0.5 — launcher at 1500/750. */
+/** gamepad2 right_trigger > 0.5 — launcher at 1500/750 while held. */
 public final class ShootNearCommand {
     private ShootNearCommand() {}
     public static Command create(Shooter shooter) {
-        return Command.build()
-                .setExecute(() -> { shooter.applyPidfIfChanged(); shooter.shootNear(); })
-                .requiring(shooter);
+        return new HeldActionCommand(
+                () -> { shooter.applyPidfIfChanged(); shooter.shootNear(); },
+                shooter::stop,
+                shooter);
     }
 }
 ```
@@ -1217,13 +1293,14 @@ import com.pedropathing.ivy.Command;
 
 import org.firstinspires.ftc.teamcode.pedro.subsystems.Shooter;
 
-/** gamepad2 left_trigger > 0.5 — launcher at 950/1450. */
+/** gamepad2 left_trigger > 0.5 — launcher at 950/1450 while held. */
 public final class ShootFarCommand {
     private ShootFarCommand() {}
     public static Command create(Shooter shooter) {
-        return Command.build()
-                .setExecute(() -> { shooter.applyPidfIfChanged(); shooter.shootFar(); })
-                .requiring(shooter);
+        return new HeldActionCommand(
+                () -> { shooter.applyPidfIfChanged(); shooter.shootFar(); },
+                shooter::stop,
+                shooter);
     }
 }
 ```
@@ -1240,27 +1317,29 @@ import org.firstinspires.ftc.teamcode.pedro.subsystems.Indicator;
 import org.firstinspires.ftc.teamcode.pedro.subsystems.Shooter;
 
 /**
- * gamepad2 right_stick_button — launcher at 10000/10000 + blinkin BLUE.
+ * gamepad2 right_stick_button — launcher at 10000/10000 + blinkin BLUE
+ * while held. Releases return the shooter to 0; IndicatorDefaultCommand
+ * reclaims the LED.
  *
- * TEACHING NOTE: the LED goes BLUE regardless of alliance. That's the
- * current behavior (see spec §13) and we preserve it. If the team
- * decides they want alliance-colored flash instead, change here.
+ * TEACHING NOTE: the LED is forced BLUE regardless of alliance — that's
+ * today's behavior (spec §13) and we preserve it.
  */
 public final class ShootClearCommand {
     private ShootClearCommand() {}
     public static Command create(Shooter shooter, Indicator indicator) {
-        return Command.build()
-                .setExecute(() -> {
+        return new HeldActionCommand(
+                () -> {
                     shooter.applyPidfIfChanged();
                     shooter.shootClear();
                     indicator.setPattern(RevBlinkinLedDriver.BlinkinPattern.BLUE);
-                })
-                .requiring(shooter, indicator);
+                },
+                shooter::stop,   // indicator default command repaints alliance on release
+                shooter, indicator);
     }
 }
 ```
 
-- [ ] **Step 5: Create `ClearJamCommand.java`.**
+- [ ] **Step 6: Create `ClearJamCommand.java`.**
 
 ```java
 package org.firstinspires.ftc.teamcode.pedro.commands;
@@ -1272,40 +1351,46 @@ import org.firstinspires.ftc.teamcode.pedro.subsystems.Pusher;
 import org.firstinspires.ftc.teamcode.pedro.subsystems.Shooter;
 
 /**
- * gamepad2 x — multi-subsystem "unjam everything" macro. Intakes forward,
- * launcher reversed, pusher forward. Ports DriveCodeCommon.java:77-80 +
- * :115-118 into a single command that requires all three subsystems so
- * conflicting commands on any of them interrupt cleanly.
+ * gamepad2 x — multi-subsystem "unjam everything" macro. While held:
+ * intakes forward, launcher reversed, pusher forward. On release: all
+ * three stopped. Ports DriveCodeCommon.java:77-80 + :115-118 into one
+ * command that requires all three subsystems so any conflicting
+ * command preempts cleanly.
  */
 public final class ClearJamCommand {
     private ClearJamCommand() {}
     public static Command create(Intake intake, Shooter shooter, Pusher pusher) {
-        return Command.build()
-                .setExecute(() -> {
+        return new HeldActionCommand(
+                () -> {
                     intake.setOnePower(1.0);
                     intake.setTwoPower(1.0);
                     shooter.reverse();
                     pusher.setPower(1.0);
-                })
-                .requiring(intake, shooter, pusher);
+                },
+                () -> {
+                    intake.stopAll();
+                    shooter.stop();
+                    pusher.stop();
+                },
+                intake, shooter, pusher);
     }
 }
 ```
 
-- [ ] **Step 6: Compile.**
+- [ ] **Step 7: Compile.**
 
 Run: `./gradlew :TeamCode:assembleDebug`
-Expected: `BUILD SUCCESSFUL`. If the builder signature is wrong (missing `.build()` terminator or different return type), fix all seven files consistently.
+Expected: `BUILD SUCCESSFUL`.
 
-- [ ] **Step 7: Commit.**
+- [ ] **Step 8: Commit.**
 
 ```bash
 git add TeamCode/src/main/java/org/firstinspires/ftc/teamcode/pedro/commands/
-git commit -m "pedro: add gamepad2 triggered commands
+git commit -m "pedro: add gamepad2 triggered commands with explicit stop on release
 
-Intake one/two, push, three shoot modes (near/far/clear), and
-the clear-jam multi-subsystem macro. Each uses Ivy's
-Command.build() builder since they're short and stateless.
+HeldActionCommand helper wraps Command interface with run/stop
+Runnables so hardware always stops when the button releases
+(Ivy's builder has no documented onEnd hook).
 
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ```
@@ -1733,12 +1818,16 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 
 ### Task 15: `RobotContainer`
 
-The "one place" that wires everything together. Holds subsystem instances, preset constants, and the gamepad binding table. Exposes a method to re-schedule defaults (called once at start, plus again whenever `GamepadTriggers` releases a driver-assist command — simpler: re-schedule every tick if not already running).
+The "one place" that wires everything together. Holds subsystem instances, preset constants, and the gamepad binding table. Exposes `scheduleDefaults()` and `tick()`, plus an opt-in `bindTriggers()` that the full OpMode calls (and the bring-up OpMode skips).
+
+**Pre-task verification:**
+
+- [ ] Confirm `LimelightVision`'s public constructor signature in `TeamCode/src/main/java/org/firstinspires/ftc/teamcode/vision/LimelightVision.java`. At the time this plan was written it was `public LimelightVision(HardwareMap hardwareMap, String name, Telemetry telemetry)` (line 143). If it has changed, adjust the instantiation below.
 
 **Files:**
 - Create: `.../pedro/RobotContainer.java`
 
-- [ ] **Step 1: Create `RobotContainer.java`.**
+- [ ] **Step 1: Create `RobotContainer.java` (trigger binding is opt-in; constructor does NOT auto-bind).**
 
 ```java
 package org.firstinspires.ftc.teamcode.pedro;
@@ -1821,17 +1910,20 @@ public class RobotContainer {
         this.teleOpDrive       = new TeleOpDriveCommand(drivetrain, gp1);
         this.indicatorDefault  = new IndicatorDefaultCommand(indicator, alliance);
 
-        bindTriggers(false);
+        // Trigger binding is opt-in — PedroBringUpTeleOp skips this call.
     }
 
     /**
-     * Wire triggers. When {@code defaultsOnly} is true, driver-assist and
-     * subsystem buttons are skipped — used by PedroBringUpTeleOp to
-     * verify the default commands in isolation (spec §10 step 2).
+     * Wire all gamepad triggers to commands. PedroBringUpTeleOp
+     * (defaults-only, spec §10 step 2) does NOT call this. PedroTeleOp
+     * calls it once after construction.
+     *
+     * TEACHING NOTE (spec §9.3): gamepad1.a changes from the toggle
+     * behavior in DriveCode to hold-to-run here. This is intentional
+     * and matches the spec — hold-to-run is the idiomatic command-based
+     * pattern and removes the autoAlignActive state machine.
      */
-    public void bindTriggers(boolean defaultsOnly) {
-        if (defaultsOnly) return;
-
+    public void bindTriggers() {
         // ---- gamepad 2 (operator) ----
         triggers.whileTrue(() -> gp2.right_bumper,        () -> IntakeOneRunCommand.create(intake));
         triggers.whileTrue(() -> gp2.left_bumper,         () -> IntakeTwoRunCommand.create(intake));
@@ -1855,11 +1947,16 @@ public class RobotContainer {
     }
 
     /** Call every loop, before Scheduler.execute(). Re-schedules defaults
-     *  when nothing else owns their subsystem. Also advances the Pedro
-     *  follower one step. */
+     *  when nothing else owns their subsystem. Also ticks Pedro's
+     *  follower so the localizer stays current even when no path is
+     *  active — the driver-assists need an up-to-date pose the moment
+     *  they fire. */
     public void tick() {
-        // Advance Pedro's localizer + follower every loop regardless of
-        // whether any follow-command is active.
+        // NOTE: the spec §6.1 originally said "only update when following."
+        // That would stop pose tracking during manual driving and break
+        // SnapToAprilTagCommand / PathToPoseCommand at start (they read
+        // a stale pose). Pedro's follower.update() ticks the localizer
+        // whether or not a path is active, so we always call it.
         drivetrain.update();
 
         // Re-schedule defaults if they ended because something preempted.
@@ -1930,7 +2027,8 @@ public class PedroBringUpTeleOp extends LinearOpMode {
 
         Scheduler.reset();
         RobotContainer robot = new RobotContainer(hardwareMap, gamepad1, gamepad2, alliance, telemetry);
-        robot.bindTriggers(true);   // defaults only — no other triggers
+        // Intentionally NOT calling robot.bindTriggers() — this OpMode
+        // exercises only the default commands (spec §10 step 2 gate).
         robot.scheduleDefaults();
 
         while (opModeIsActive()) {
@@ -1939,7 +2037,6 @@ public class PedroBringUpTeleOp extends LinearOpMode {
             robot.pollTelemetry(telemetry);
             telemetry.update();
         }
-        // Not strictly required; let Ivy tear down.
     }
 }
 ```
@@ -1954,38 +2051,6 @@ Expected: `BUILD SUCCESSFUL`.
 ```bash
 git add TeamCode/src/main/java/org/firstinspires/ftc/teamcode/pedro/PedroBringUpTeleOp.java
 git commit -m "pedro: add PedroBringUpTeleOp (defaults-only debug OpMode)
-
-Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
-```
-
-**Note on `bindTriggers(true)`:** the current `RobotContainer` constructor calls `bindTriggers(false)` — we then call `bindTriggers(true)` which returns immediately and does nothing (the first call already wired everything). That is a bug. Fix: change the constructor to NOT auto-bind; both OpModes should explicitly call `bindTriggers(false)` or `bindTriggers(true)`.
-
-- [ ] **Step 4: Fix the `RobotContainer` constructor so it doesn't auto-bind.**
-
-Edit `RobotContainer.java`: remove `bindTriggers(false);` from the constructor, and change `bindTriggers(boolean)` to clear any existing bindings (call a reset) before applying. Cleaner alternative: drop the boolean, make `bindTriggers()` always wire full bindings, and have `PedroBringUpTeleOp` simply not call it.
-
-Simplest fix that matches the plan above: delete the constructor call entirely, so bindings are opt-in. Then `PedroTeleOp` will call `robot.bindTriggers()` and `PedroBringUpTeleOp` will not.
-
-Update `RobotContainer.bindTriggers` signature:
-
-```java
-public void bindTriggers() {  // drop the boolean
-    triggers.whileTrue(() -> gp2.right_bumper, () -> IntakeOneRunCommand.create(intake));
-    // ... etc, unchanged
-}
-```
-
-And remove `bindTriggers(false);` from the constructor. Then `PedroBringUpTeleOp` drops the `bindTriggers(true)` call.
-
-- [ ] **Step 5: Compile + commit the fix.**
-
-Run: `./gradlew :TeamCode:assembleDebug` → `BUILD SUCCESSFUL`.
-
-```bash
-git add TeamCode/src/main/java/org/firstinspires/ftc/teamcode/pedro/RobotContainer.java TeamCode/src/main/java/org/firstinspires/ftc/teamcode/pedro/PedroBringUpTeleOp.java
-git commit -m "pedro: make trigger binding opt-in on RobotContainer
-
-PedroBringUpTeleOp skips bindTriggers(); PedroTeleOp calls it.
 
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ```
@@ -2081,6 +2146,11 @@ on a No-Go.
 - [ ] Dashboard connects; `Pose` shows `x=0 y=0 h=0°`.
 - [ ] Press START. Mecanum driving feels the same as today's DriveCode
       (including `gp1.right_bumper` slow-mode).
+- [ ] **Hardware-crossover sanity:** push `gp1.left_stick_y` forward —
+      robot moves physically forward (not backward). Push the stick
+      right — robot strafes right. Right-stick-x right — robot rotates
+      clockwise. If any are wrong, the crossed hardwareMap (spec §13)
+      didn't round-trip correctly; fix before moving on.
 - [ ] Blinkin LED shows BLUE (default alliance).
 
 ## 3. Localizer check
@@ -2128,7 +2198,13 @@ on a No-Go.
 - [ ] Init and run one of the Road Runner autos (e.g. BlueAuto).
       Confirm it runs unchanged.
 
-## 7. Tuning follow-ups (after bring-up passes)
+## 7. Coexistence check
+- [ ] If any gate in §2–§6 fails, DO NOT remove or disable the old
+      "DriveCode" TeleOp — the new Pedro TeleOp and old RR TeleOp
+      coexist in the project. You can always fall back to DriveCode
+      on the field while debugging Pedro.
+
+## 8. Tuning follow-ups (after bring-up passes)
 - [ ] Field-tune `STARTING_POSE` and `SCORING_POSE` to real field
       coordinates.
 - [ ] Field-tune `APRILTAG_STANDOFF_INCHES` to the desired shooter

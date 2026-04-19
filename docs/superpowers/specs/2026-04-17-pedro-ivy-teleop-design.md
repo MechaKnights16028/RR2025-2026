@@ -113,7 +113,7 @@ Public API:
 - `drive(double x, double y, double rot, boolean slow)` — robot-relative. Sign convention mirrors `DriveCodeCommon.drives()`: `x = -gamepad1.left_stick_y`, `y = -gamepad1.left_stick_x`, `rot = -gamepad1.right_stick_x`. `slow=true` multiplies by 0.5.
 - `setPose(Pose pose)` / `getPose() : Pose`.
 - `followPath(PathChain path)` / `isFollowing() : boolean` / `cancel()`.
-- `periodic()` — advances `follower.update()` while a path is active; no-op otherwise.
+- `update()` — called every loop from `RobotContainer.tick()`. Delegates to Pedro's `follower.update()` unconditionally so the localizer stays current even when no path is active. Driver-assist commands read pose at `start()` and require an up-to-date estimate.
 
 **`Drivetrain.cancel()` contract:** stops the follower, clears the active-path reference, and calls `drive(0,0,0,false)` so motors stop in one tick. After `cancel()`, `isFollowing()` returns `false` and `followPath(...)` may be called again.
 
