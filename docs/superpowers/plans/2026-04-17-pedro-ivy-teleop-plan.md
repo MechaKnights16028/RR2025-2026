@@ -1020,11 +1020,11 @@ Both default commands are written using the `Command` interface directly (not th
 ```java
 package org.firstinspires.ftc.teamcode.pedro.commands;
 
-import com.pedropathing.ivy.BlockedBehavior;
+import com.pedropathing.ivy.behaviors.BlockedBehavior;
 import com.pedropathing.ivy.Command;
-import com.pedropathing.ivy.ConflictBehavior;
-import com.pedropathing.ivy.EndCondition;
-import com.pedropathing.ivy.InterruptedBehavior;
+import com.pedropathing.ivy.behaviors.ConflictBehavior;
+import com.pedropathing.ivy.behaviors.EndCondition;
+import com.pedropathing.ivy.behaviors.InterruptedBehavior;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
 import org.firstinspires.ftc.teamcode.pedro.subsystems.Drivetrain;
@@ -1079,11 +1079,11 @@ public final class TeleOpDriveCommand implements Command {
 ```java
 package org.firstinspires.ftc.teamcode.pedro.commands;
 
-import com.pedropathing.ivy.BlockedBehavior;
+import com.pedropathing.ivy.behaviors.BlockedBehavior;
 import com.pedropathing.ivy.Command;
-import com.pedropathing.ivy.ConflictBehavior;
-import com.pedropathing.ivy.EndCondition;
-import com.pedropathing.ivy.InterruptedBehavior;
+import com.pedropathing.ivy.behaviors.ConflictBehavior;
+import com.pedropathing.ivy.behaviors.EndCondition;
+import com.pedropathing.ivy.behaviors.InterruptedBehavior;
 
 import org.firstinspires.ftc.teamcode.pedro.AllianceColor;
 import org.firstinspires.ftc.teamcode.pedro.subsystems.Indicator;
@@ -1153,11 +1153,11 @@ Seven short commands that share the same shape: while-held, run a Runnable; on r
 ```java
 package org.firstinspires.ftc.teamcode.pedro.commands;
 
-import com.pedropathing.ivy.BlockedBehavior;
+import com.pedropathing.ivy.behaviors.BlockedBehavior;
 import com.pedropathing.ivy.Command;
-import com.pedropathing.ivy.ConflictBehavior;
-import com.pedropathing.ivy.EndCondition;
-import com.pedropathing.ivy.InterruptedBehavior;
+import com.pedropathing.ivy.behaviors.ConflictBehavior;
+import com.pedropathing.ivy.behaviors.EndCondition;
+import com.pedropathing.ivy.behaviors.InterruptedBehavior;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -1443,11 +1443,11 @@ public final class DriverOverride {
 package org.firstinspires.ftc.teamcode.pedro.commands;
 
 import com.pedropathing.geometry.Pose; // TODO(API): verify package
-import com.pedropathing.ivy.BlockedBehavior;
+import com.pedropathing.ivy.behaviors.BlockedBehavior;
 import com.pedropathing.ivy.Command;
-import com.pedropathing.ivy.ConflictBehavior;
-import com.pedropathing.ivy.EndCondition;
-import com.pedropathing.ivy.InterruptedBehavior;
+import com.pedropathing.ivy.behaviors.ConflictBehavior;
+import com.pedropathing.ivy.behaviors.EndCondition;
+import com.pedropathing.ivy.behaviors.InterruptedBehavior;
 
 import org.firstinspires.ftc.teamcode.pedro.subsystems.Drivetrain;
 
@@ -1482,11 +1482,11 @@ public final class ResetPoseCommand implements Command {
 package org.firstinspires.ftc.teamcode.pedro.commands;
 
 import com.pedropathing.geometry.Pose; // TODO(API): verify
-import com.pedropathing.ivy.BlockedBehavior;
+import com.pedropathing.ivy.behaviors.BlockedBehavior;
 import com.pedropathing.ivy.Command;
-import com.pedropathing.ivy.ConflictBehavior;
-import com.pedropathing.ivy.EndCondition;
-import com.pedropathing.ivy.InterruptedBehavior;
+import com.pedropathing.ivy.behaviors.ConflictBehavior;
+import com.pedropathing.ivy.behaviors.EndCondition;
+import com.pedropathing.ivy.behaviors.InterruptedBehavior;
 import com.pedropathing.ivy.Scheduler;
 import com.pedropathing.ivy.pedro.PedroCommands;
 import com.pedropathing.paths.PathChain; // TODO(API): verify
@@ -1587,11 +1587,11 @@ Where `a` is `pillarTag.getAngleToTarget()` (radians), `d` is `pillarTag.getDist
 package org.firstinspires.ftc.teamcode.pedro.commands;
 
 import com.pedropathing.geometry.Pose; // TODO(API): verify
-import com.pedropathing.ivy.BlockedBehavior;
+import com.pedropathing.ivy.behaviors.BlockedBehavior;
 import com.pedropathing.ivy.Command;
-import com.pedropathing.ivy.ConflictBehavior;
-import com.pedropathing.ivy.EndCondition;
-import com.pedropathing.ivy.InterruptedBehavior;
+import com.pedropathing.ivy.behaviors.ConflictBehavior;
+import com.pedropathing.ivy.behaviors.EndCondition;
+import com.pedropathing.ivy.behaviors.InterruptedBehavior;
 import com.pedropathing.ivy.Scheduler;
 import com.pedropathing.ivy.pedro.PedroCommands;
 import com.pedropathing.paths.PathChain; // TODO(API): verify
@@ -1711,11 +1711,11 @@ Similar shape to `SnapToAprilTagCommand`, but the target pose is "just far enoug
 package org.firstinspires.ftc.teamcode.pedro.commands;
 
 import com.pedropathing.geometry.Pose; // TODO(API): verify
-import com.pedropathing.ivy.BlockedBehavior;
+import com.pedropathing.ivy.behaviors.BlockedBehavior;
 import com.pedropathing.ivy.Command;
-import com.pedropathing.ivy.ConflictBehavior;
-import com.pedropathing.ivy.EndCondition;
-import com.pedropathing.ivy.InterruptedBehavior;
+import com.pedropathing.ivy.behaviors.ConflictBehavior;
+import com.pedropathing.ivy.behaviors.EndCondition;
+import com.pedropathing.ivy.behaviors.InterruptedBehavior;
 import com.pedropathing.ivy.Scheduler;
 import com.pedropathing.ivy.pedro.PedroCommands;
 import com.pedropathing.paths.PathChain; // TODO(API): verify
