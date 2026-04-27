@@ -67,14 +67,14 @@
                     RevHubOrientationOnRobot.UsbFacingDirection.UP;
     
             // drive model parameters
-            public double inPerTick = 8023;
+            public double inPerTick = 0.00159321925;
             public double lateralInPerTick = 5800.100506106753;
             public double trackWidthTicks = 5849.621806110564;
     
             // feedforward parameters (in tick units)
             public double kS = 1.0647220814885179;
             public double kV = 0.0005463216207237682;
-            public double kA = 0;
+            public double kA = 0.0000001;
     
             // path profile parameters (in inches)
             public double maxWheelVel = 50;
