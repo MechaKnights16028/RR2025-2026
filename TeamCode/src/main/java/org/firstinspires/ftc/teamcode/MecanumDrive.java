@@ -68,8 +68,8 @@
     
             // drive model parameters
             public double inPerTick = 0.00159321925;
-            public double lateralInPerTick = 5800.100506106753;
-            public double trackWidthTicks = 5849.621806110564;
+            public double lateralInPerTick = -0.0012116352228014006;
+            public double trackWidthTicks = 10042.5600557;//this is from a calculation and may need to be fixed
     
             // feedforward parameters (in tick units)
             public double kS = 1.0647220814885179;
@@ -88,7 +88,7 @@
             // path controller gains
             public double axialGain = 0.0;
             public double lateralGain = 0.0;
-            public double headingGain = 0.0; // shared with turn
+            public double headingGain = 1.0; // shared with turn
     
             public double axialVelGain = 0.0;
             public double lateralVelGain = 0.0;
