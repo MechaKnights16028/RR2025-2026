@@ -74,7 +74,7 @@
             // feedforward parameters (in tick units)
             public double kS = 1.0647220814885179;
             public double kV = 0.0005463216207237682;
-            public double kA = 0.0000001;
+            public double kA = 0.0001;
     
             // path profile parameters (in inches)
             public double maxWheelVel = 50;
