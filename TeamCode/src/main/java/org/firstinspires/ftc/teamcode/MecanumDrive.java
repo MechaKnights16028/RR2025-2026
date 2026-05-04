@@ -68,7 +68,7 @@
     
             // drive model parameters
             public double inPerTick = 0.00159321925;
-            public double lateralInPerTick = -0.0012116352228014006;
+            public double lateralInPerTick = 0.0012116352228014006;
             public double trackWidthTicks = 10042.5600557;//this is from a calculation and may need to be fixed
     
             // feedforward parameters (in tick units)
