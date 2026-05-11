@@ -75,8 +75,8 @@ public class DriveCodeCommon extends LinearOpMode{
             drive.intakeTwo.setPower(0);
         }
         if (gamepad2.x){
-            drive.intakeOne.setPower(1.0);
-            drive.intakeTwo.setPower(1.0);
+            drive.intakeOne.setPower(0.5);
+            drive.intakeTwo.setPower(0.5);
         }
     }
     public void shooter(MecanumDrive drive, PID_Tune tuner1, PID_Tune2 tuner2){// launcher1 = bottom launcher2 = top
