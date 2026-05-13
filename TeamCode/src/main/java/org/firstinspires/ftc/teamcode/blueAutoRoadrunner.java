@@ -38,7 +38,7 @@ public class blueAutoRoadrunner extends LinearOpMode {
                 if (startTime < 0) startTime = System.currentTimeMillis();
                 launcher1.setVelocity(1450.0);
                 launcher2.setVelocity(950.0);
-                return System.currentTimeMillis() - startTime < 15000;
+                return System.currentTimeMillis() - startTime < 5000;
             }
         }
     }
@@ -57,7 +57,7 @@ public class blueAutoRoadrunner extends LinearOpMode {
             launcher1 = hardwareMap.get(DcMotorEx.class, "launcherOne");
             launcher2 = hardwareMap.get(DcMotorEx.class, "launcherTwo");
         }
-        public class IntakeBalls implements Action{
+        public class PushBalls implements Action{
             private long startTime = -1;
             public boolean run(@NonNull TelemetryPacket packet){
                 if (startTime < 0) startTime = System.currentTimeMillis();
@@ -66,7 +66,31 @@ public class blueAutoRoadrunner extends LinearOpMode {
                     intake2.setPower(-0.25);
                     pusherWheel.setPower(-1.0);
                 }
-                return System.currentTimeMillis() - startTime < 3000;
+                return System.currentTimeMillis() - startTime < 5000;
+            }
+
+        }
+        public class IntakeBalls implements Action{
+            private long startTime = -1;
+            public boolean run(@NonNull TelemetryPacket packet){
+                if (startTime < 0) startTime = System.currentTimeMillis();
+                intake1.setPower(-0.5);
+                intake2.setPower(-0.25);
+                launcher1.setVelocity(0);
+                launcher2.setVelocity(0);
+                pusherWheel.setPower(0);
+                return System.currentTimeMillis() - startTime < 5000;
+            }
+
+        }
+        public class stopShooter implements Action{
+            private long startTime = -1;
+            public boolean run(@NonNull TelemetryPacket packet){
+                if (startTime < 0) startTime = System.currentTimeMillis();
+                launcher1.setVelocity(0);
+                launcher2.setVelocity(0);
+                pusherWheel.setPower(0);
+                return System.currentTimeMillis() - startTime < 10;
             }
 
         }
@@ -81,7 +105,16 @@ public class blueAutoRoadrunner extends LinearOpMode {
         drive.rightFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         drive.rightBack.setMode(DcMotor.RunMode.RUN_USING_ENCODER);*/
         Action moveOutOfStart = (drive.actionBuilder(initialPose))
-                .lineToY(40)
+                .splineToLinearHeading(new Pose2d(5, 58, Math.toRadians(15)), Math.toRadians(90))
+                .build();
+        Action moveToPickupOne = (drive.actionBuilder(new Pose2d(5, 58, Math.toRadians(15))))
+                .splineToLinearHeading(new Pose2d(30, 59, Math.toRadians(-60)), Math.toRadians(90))
+                .build();
+        Action PickUpOne = (drive.actionBuilder(new Pose2d(30, 59, Math.toRadians(-60))))
+                .splineToLinearHeading(new Pose2d(30, 90, Math.toRadians(-60)), Math.toRadians(90))
+                .build();
+        Action moveToSecondShot = (drive.actionBuilder(new Pose2d(30, 90, Math.toRadians(-60))))
+                .splineToLinearHeading(new Pose2d(0, 58, Math.toRadians(10)), Math.toRadians(90))
                 .build();
         waitForStart();
         if (isStopRequested()) return;
@@ -91,11 +124,27 @@ public class blueAutoRoadrunner extends LinearOpMode {
         Intake intake = new Intake(hardwareMap);
         Actions.runBlocking(
                 new SequentialAction(
+                        /*new ParallelAction(
+                                shooter.new Shoot(),
+                                intake.new PushBalls()
+                        ),*/
+                        moveOutOfStart,
                         new ParallelAction(
                                 shooter.new Shoot(),
+                                intake.new PushBalls()
+                        ),
+                        //intake.new stopShooter(),
+                        moveToPickupOne,
+                        new ParallelAction(
+                                PickUpOne,
                                 intake.new IntakeBalls()
                         ),
-                        moveOutOfStart
+                        //intake.new stopShooter()
+                        moveToSecondShot,
+                        new ParallelAction(
+                                shooter.new Shoot(),
+                                intake.new PushBalls()
+                        )
                 )
 
         );
