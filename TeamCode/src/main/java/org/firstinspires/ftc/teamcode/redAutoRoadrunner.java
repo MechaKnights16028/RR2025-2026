@@ -105,16 +105,16 @@ public class redAutoRoadrunner extends LinearOpMode {
         drive.rightFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         drive.rightBack.setMode(DcMotor.RunMode.RUN_USING_ENCODER);*/
         Action moveOutOfStart = (drive.actionBuilder(initialPose))
-                .splineToLinearHeading(new Pose2d(5, 58, Math.toRadians(15)), Math.toRadians(90))
+                .splineToLinearHeading(new Pose2d(-5, 68, Math.toRadians(-15)), Math.toRadians(90))
                 .build();
-        Action moveToPickupOne = (drive.actionBuilder(new Pose2d(5, 58, Math.toRadians(15))))
-                .splineToLinearHeading(new Pose2d(30, 59, Math.toRadians(-60)), Math.toRadians(90))
+        Action moveToPickupOne = (drive.actionBuilder(new Pose2d(-5, 68, Math.toRadians(-15))))
+                .splineToLinearHeading(new Pose2d(-30, 67, Math.toRadians(60)), Math.toRadians(90))
                 .build();
-        Action PickUpOne = (drive.actionBuilder(new Pose2d(30, 59, Math.toRadians(-60))))
-                .splineToLinearHeading(new Pose2d(30, 90, Math.toRadians(-60)), Math.toRadians(90))
+        Action PickUpOne = (drive.actionBuilder(new Pose2d(-30, 67, Math.toRadians(60))))
+                .splineToLinearHeading(new Pose2d(-30, 35, Math.toRadians(60)), Math.toRadians(90))
                 .build();
-        Action moveToSecondShot = (drive.actionBuilder(new Pose2d(30, 90, Math.toRadians(-60))))
-                .splineToLinearHeading(new Pose2d(0, 65, Math.toRadians(10)), Math.toRadians(90))
+        Action moveToSecondShot = (drive.actionBuilder(new Pose2d(-30, 35, Math.toRadians(60))))
+                .splineToLinearHeading(new Pose2d(0, 61, Math.toRadians(10)), Math.toRadians(90))
                 .build();
         waitForStart();
         if (isStopRequested()) return;
