@@ -75,8 +75,8 @@ public class DriveCodeCommon extends LinearOpMode{
             drive.intakeTwo.setPower(0);
         }
         if (gamepad2.x){
-            drive.intakeOne.setPower(0.5);
-            drive.intakeTwo.setPower(0.5);
+            drive.intakeOne.setPower(0.25);
+            drive.intakeTwo.setPower(0.25);
         }
     }
     public void shooter(MecanumDrive drive, PID_Tune tuner1, PID_Tune2 tuner2){// launcher1 = bottom launcher2 = top
@@ -92,9 +92,9 @@ public class DriveCodeCommon extends LinearOpMode{
             drive.launcherOne.setVelocity(1500); //bottom wheel
             drive.launcherTwo.setVelocity(750); //top wheel
         }
-        else if(gamepad2.left_trigger > 0.5){
-            drive.launcherOne.setVelocity(950);
-            drive.launcherTwo.setVelocity(1450);
+        else if(gamepad2.left_trigger > 0.5){//far shot
+            drive.launcherOne.setVelocity(940);
+            drive.launcherTwo.setVelocity(1440);
         }
         else if(gamepad2.right_stick_button){
             drive.pattern = RevBlinkinLedDriver.BlinkinPattern.BLUE;

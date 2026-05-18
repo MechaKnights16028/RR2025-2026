@@ -18,7 +18,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 
 @Autonomous
-public class blueAutoRoadrunner extends LinearOpMode {
+public class redAutoRoadrunner extends LinearOpMode {
 
     public class Shooter{
         private DcMotorEx launcher1;
@@ -36,8 +36,8 @@ public class blueAutoRoadrunner extends LinearOpMode {
             private long startTime = -1;
             public boolean run(@NonNull TelemetryPacket packet) {
                 if (startTime < 0) startTime = System.currentTimeMillis();
-                launcher1.setVelocity(1430.0);
-                launcher2.setVelocity(930.0);
+                launcher1.setVelocity(1440.0);
+                launcher2.setVelocity(940.0);
                 return System.currentTimeMillis() - startTime < 5000;
             }
         }
@@ -61,7 +61,7 @@ public class blueAutoRoadrunner extends LinearOpMode {
             private long startTime = -1;
             public boolean run(@NonNull TelemetryPacket packet){
                 if (startTime < 0) startTime = System.currentTimeMillis();
-                if (launcher1.getVelocity()>1430 && launcher2.getVelocity()>930){
+                if (launcher1.getVelocity()>1440 && launcher2.getVelocity()>940){
                     intake1.setPower(-0.5);
                     intake2.setPower(-0.25);
                     pusherWheel.setPower(-1.0);
