@@ -4,9 +4,12 @@ import androidx.annotation.NonNull;
 
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
+import com.acmerobotics.roadrunner.AngularVelConstraint;
+import com.acmerobotics.roadrunner.MinVelConstraint;
 import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.SequentialAction;
+import com.acmerobotics.roadrunner.TranslationalVelConstraint;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -16,6 +19,9 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
+import com.acmerobotics.roadrunner.ProfileAccelConstraint;
+
+import java.util.Arrays;
 
 @Autonomous
 public class blueAutoRoadrunner extends LinearOpMode {
@@ -111,10 +117,21 @@ public class blueAutoRoadrunner extends LinearOpMode {
                 .splineToLinearHeading(new Pose2d(30, 59, Math.toRadians(-60)), Math.toRadians(90))
                 .build();
         Action PickUpOne = (drive.actionBuilder(new Pose2d(30, 59, Math.toRadians(-60))))
-                .splineToLinearHeading(new Pose2d(30, 90, Math.toRadians(-60)), Math.toRadians(90))
+                .splineToLinearHeading(
+                        new Pose2d(35, 90, Math.toRadians(-60)),
+                        Math.toRadians(90),
+                        new MinVelConstraint(Arrays.asList(
+                                new TranslationalVelConstraint(MecanumDrive.PARAMS.maxWheelVel * 0.25),
+                                new AngularVelConstraint(MecanumDrive.PARAMS.maxAngVel * 0.25)
+                        )),
+                        new ProfileAccelConstraint(
+                                MecanumDrive.PARAMS.minProfileAccel,
+                                MecanumDrive.PARAMS.maxProfileAccel
+                        )
+                )
                 .build();
-        Action moveToSecondShot = (drive.actionBuilder(new Pose2d(30, 90, Math.toRadians(-60))))
-                .splineToLinearHeading(new Pose2d(0, 65, Math.toRadians(10)), Math.toRadians(90))
+        Action moveToSecondShot = (drive.actionBuilder(new Pose2d(35, 90, Math.toRadians(-60))))
+                .splineToLinearHeading(new Pose2d(15, 58, Math.toRadians(15)), Math.toRadians(90))
                 .build();
         waitForStart();
         if (isStopRequested()) return;
