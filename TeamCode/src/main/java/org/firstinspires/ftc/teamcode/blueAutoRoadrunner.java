@@ -118,7 +118,7 @@ public class blueAutoRoadrunner extends LinearOpMode {
                 .build();
         Action PickUpOne = (drive.actionBuilder(new Pose2d(30, 59, Math.toRadians(-60))))
                 .splineToLinearHeading(
-                        new Pose2d(35, 90, Math.toRadians(-60)),
+                        new Pose2d(30, 75, Math.toRadians(-60)),
                         Math.toRadians(90),
                         new MinVelConstraint(Arrays.asList(
                                 new TranslationalVelConstraint(MecanumDrive.PARAMS.maxWheelVel * 0.25),
@@ -130,7 +130,7 @@ public class blueAutoRoadrunner extends LinearOpMode {
                         )
                 )
                 .build();
-        Action moveToSecondShot = (drive.actionBuilder(new Pose2d(35, 90, Math.toRadians(-60))))
+        Action moveToSecondShot = (drive.actionBuilder(new Pose2d(30, 75, Math.toRadians(-60))))
                 .splineToLinearHeading(new Pose2d(15, 58, Math.toRadians(15)), Math.toRadians(90))
                 .build();
         waitForStart();
