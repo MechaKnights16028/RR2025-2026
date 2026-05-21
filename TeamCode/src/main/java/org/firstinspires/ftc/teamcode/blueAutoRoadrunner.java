@@ -82,8 +82,8 @@ public class blueAutoRoadrunner extends LinearOpMode {
                 if (startTime < 0) startTime = System.currentTimeMillis();
                 intake1.setPower(-0.5);
                 intake2.setPower(-0.25);
-                launcher1.setVelocity(-150);
-                launcher2.setVelocity(-150);
+                launcher1.setVelocity(-250);
+                launcher2.setVelocity(-250);
                 pusherWheel.setPower(0.1);
                 return System.currentTimeMillis() - startTime < 2500;
             }
