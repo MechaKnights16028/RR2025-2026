@@ -78,7 +78,7 @@ public class redAutoRoadrunner extends LinearOpMode {
                 intake2.setPower(-0.25);
                 launcher1.setVelocity(-250);
                 launcher2.setVelocity(-250);
-                pusherWheel.setPower(0);
+                pusherWheel.setPower(.1);
                 return System.currentTimeMillis() - startTime < 2500;
             }
 
