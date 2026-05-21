@@ -42,8 +42,8 @@ public class blueAutoRoadrunner extends LinearOpMode {
             private long startTime = -1;
             public boolean run(@NonNull TelemetryPacket packet) {
                 if (startTime < 0) startTime = System.currentTimeMillis();
-                launcher1.setVelocity(1430.0);
-                launcher2.setVelocity(930.0);
+                launcher1.setVelocity(1420.0);
+                launcher2.setVelocity(920.0);
                 return System.currentTimeMillis() - startTime < 5000;
             }
         }
@@ -67,7 +67,7 @@ public class blueAutoRoadrunner extends LinearOpMode {
             private long startTime = -1;
             public boolean run(@NonNull TelemetryPacket packet){
                 if (startTime < 0) startTime = System.currentTimeMillis();
-                if (launcher1.getVelocity()>1430 && launcher2.getVelocity()>930){
+                if (launcher1.getVelocity()>1420 && launcher2.getVelocity()>920){
                     intake1.setPower(-0.5);
                     intake2.setPower(-0.25);
                     pusherWheel.setPower(-1.0);
@@ -82,10 +82,20 @@ public class blueAutoRoadrunner extends LinearOpMode {
                 if (startTime < 0) startTime = System.currentTimeMillis();
                 intake1.setPower(-0.5);
                 intake2.setPower(-0.25);
-                launcher1.setVelocity(0);
-                launcher2.setVelocity(0);
+                launcher1.setVelocity(-50);
+                launcher2.setVelocity(-50);
                 pusherWheel.setPower(0);
                 return System.currentTimeMillis() - startTime < 2500;
+            }
+
+        }
+        public class readyBalls implements Action{
+            private long startTime = -1;
+            public boolean run(@NonNull TelemetryPacket packet){
+                if (startTime < 0) startTime = System.currentTimeMillis();
+                launcher1.setVelocity(-10000);
+                launcher2.setVelocity(-10000);
+                return System.currentTimeMillis() - startTime < 10;
             }
 
         }
@@ -114,11 +124,11 @@ public class blueAutoRoadrunner extends LinearOpMode {
                 .splineToLinearHeading(new Pose2d(5, 58, Math.toRadians(15)), Math.toRadians(90))
                 .build();
         Action moveToPickupOne = (drive.actionBuilder(new Pose2d(5, 58, Math.toRadians(15))))
-                .splineToLinearHeading(new Pose2d(30, 59, Math.toRadians(-60)), Math.toRadians(90))
+                .splineToLinearHeading(new Pose2d(22, 59, Math.toRadians(-60)), Math.toRadians(90))
                 .build();
-        Action PickUpOne = (drive.actionBuilder(new Pose2d(30, 59, Math.toRadians(-60))))
+        Action PickUpOne = (drive.actionBuilder(new Pose2d(22, 59, Math.toRadians(-60))))
                 .splineToLinearHeading(
-                        new Pose2d(30, 75, Math.toRadians(-60)),
+                        new Pose2d(22, 77, Math.toRadians(-90)),
                         Math.toRadians(90),
                         new MinVelConstraint(Arrays.asList(
                                 new TranslationalVelConstraint(MecanumDrive.PARAMS.maxWheelVel * 0.25),
@@ -130,8 +140,11 @@ public class blueAutoRoadrunner extends LinearOpMode {
                         )
                 )
                 .build();
-        Action moveToSecondShot = (drive.actionBuilder(new Pose2d(30, 75, Math.toRadians(-60))))
-                .splineToLinearHeading(new Pose2d(15, 58, Math.toRadians(15)), Math.toRadians(90))
+        Action moveToSecondShot = (drive.actionBuilder(new Pose2d(22, 77, Math.toRadians(-90))))
+                .splineToLinearHeading(new Pose2d(5, 53, Math.toRadians(-15)), Math.toRadians(90))
+                .build();
+        Action moveFromSecondShot = (drive.actionBuilder(new Pose2d(5, 53, Math.toRadians(-90))))
+                .splineToLinearHeading(new Pose2d(25, 58, Math.toRadians(-15)), Math.toRadians(90))
                 .build();
         waitForStart();
         if (isStopRequested()) return;
@@ -158,10 +171,12 @@ public class blueAutoRoadrunner extends LinearOpMode {
                         ),
                         //intake.new stopShooter()
                         moveToSecondShot,
+                        //intake.new readyBalls(),
                         new ParallelAction(
                                 shooter.new Shoot(),
                                 intake.new PushBalls()
-                        )
+                        ),
+                        moveFromSecondShot
                 )
 
         );

@@ -36,8 +36,8 @@ public class redAutoRoadrunner extends LinearOpMode {
             private long startTime = -1;
             public boolean run(@NonNull TelemetryPacket packet) {
                 if (startTime < 0) startTime = System.currentTimeMillis();
-                launcher1.setVelocity(1440.0);
-                launcher2.setVelocity(940.0);
+                launcher1.setVelocity(1400.0);
+                launcher2.setVelocity(900.0);
                 return System.currentTimeMillis() - startTime < 5000;
             }
         }
@@ -61,7 +61,7 @@ public class redAutoRoadrunner extends LinearOpMode {
             private long startTime = -1;
             public boolean run(@NonNull TelemetryPacket packet){
                 if (startTime < 0) startTime = System.currentTimeMillis();
-                if (launcher1.getVelocity()>1440 && launcher2.getVelocity()>940){
+                if (launcher1.getVelocity()>1300 && launcher2.getVelocity()>800){
                     intake1.setPower(-0.5);
                     intake2.setPower(-0.25);
                     pusherWheel.setPower(-1.0);
@@ -76,8 +76,8 @@ public class redAutoRoadrunner extends LinearOpMode {
                 if (startTime < 0) startTime = System.currentTimeMillis();
                 intake1.setPower(-0.5);
                 intake2.setPower(-0.25);
-                launcher1.setVelocity(0);
-                launcher2.setVelocity(0);
+                launcher1.setVelocity(-250);
+                launcher2.setVelocity(-250);
                 pusherWheel.setPower(0);
                 return System.currentTimeMillis() - startTime < 2500;
             }
@@ -105,17 +105,21 @@ public class redAutoRoadrunner extends LinearOpMode {
         drive.rightFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         drive.rightBack.setMode(DcMotor.RunMode.RUN_USING_ENCODER);*/
         Action moveOutOfStart = (drive.actionBuilder(initialPose))
-                .splineToLinearHeading(new Pose2d(-5, 68, Math.toRadians(-15)), Math.toRadians(90))
+                .splineToLinearHeading(new Pose2d(5, 68, Math.toRadians(-7)), Math.toRadians(90))
                 .build();
-        Action moveToPickupOne = (drive.actionBuilder(new Pose2d(-5, 68, Math.toRadians(-15))))
-                .splineToLinearHeading(new Pose2d(-30, 67, Math.toRadians(60)), Math.toRadians(90))
+        Action moveToPickupOne = (drive.actionBuilder(new Pose2d(5, 68, Math.toRadians(-7))))
+                .splineToLinearHeading(new Pose2d(18, 67, Math.toRadians(62)), Math.toRadians(90))
                 .build();
-        Action PickUpOne = (drive.actionBuilder(new Pose2d(-30, 67, Math.toRadians(60))))
-                .splineToLinearHeading(new Pose2d(-30, 35, Math.toRadians(60)), Math.toRadians(90))
+        Action PickUpOne = (drive.actionBuilder(new Pose2d(18, 67, Math.toRadians(62))))
+                .splineToLinearHeading(new Pose2d(22, 27, Math.toRadians(62)), Math.toRadians(90))
                 .build();
-        Action moveToSecondShot = (drive.actionBuilder(new Pose2d(-30, 35, Math.toRadians(60))))
-                .splineToLinearHeading(new Pose2d(0, 61, Math.toRadians(10)), Math.toRadians(90))
+        Action moveToSecondShot = (drive.actionBuilder(new Pose2d(22, 27, Math.toRadians(62))))
+                .splineToLinearHeading(new Pose2d(2, 50, Math.toRadians(15)), Math.toRadians(90))
                 .build();
+        Action moveFromSecondShot = (drive.actionBuilder(new Pose2d(3, 48, Math.toRadians(15))))
+                .splineToLinearHeading(new Pose2d(25, 40, Math.toRadians(15)), Math.toRadians(90))
+                .build();
+
         waitForStart();
         if (isStopRequested()) return;
         PID_Tune tuner1 = new PID_Tune();
@@ -144,7 +148,8 @@ public class redAutoRoadrunner extends LinearOpMode {
                         new ParallelAction(
                                 shooter.new Shoot(),
                                 intake.new PushBalls()
-                        )
+                        ),
+                        moveFromSecondShot
                 )
 
         );
