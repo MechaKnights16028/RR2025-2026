@@ -67,7 +67,7 @@ public class blueAutoRoadrunner extends LinearOpMode {
             private long startTime = -1;
             public boolean run(@NonNull TelemetryPacket packet){
                 if (startTime < 0) startTime = System.currentTimeMillis();
-                if (launcher1.getVelocity()>1420 && launcher2.getVelocity()>920){
+                if (launcher1.getVelocity()>1400 && launcher2.getVelocity()>900){
                     intake1.setPower(-0.5);
                     intake2.setPower(-0.25);
                     pusherWheel.setPower(-1.0);
@@ -93,8 +93,11 @@ public class blueAutoRoadrunner extends LinearOpMode {
             private long startTime = -1;
             public boolean run(@NonNull TelemetryPacket packet){
                 if (startTime < 0) startTime = System.currentTimeMillis();
-                launcher1.setVelocity(-10000);
-                launcher2.setVelocity(-10000);
+                intake1.setPower(0.1);
+                intake2.setPower(0.1);
+                launcher1.setVelocity(-150);
+                launcher2.setVelocity(-150);
+                pusherWheel.setPower(0.1);
                 return System.currentTimeMillis() - startTime < 10;
             }
 
@@ -106,7 +109,7 @@ public class blueAutoRoadrunner extends LinearOpMode {
                 launcher1.setVelocity(0);
                 launcher2.setVelocity(0);
                 pusherWheel.setPower(0);
-                return System.currentTimeMillis() - startTime < 10;
+                return System.currentTimeMillis() - startTime < 100;
             }
 
         }
@@ -141,10 +144,10 @@ public class blueAutoRoadrunner extends LinearOpMode {
                 )
                 .build();
         Action moveToSecondShot = (drive.actionBuilder(new Pose2d(22, 77, Math.toRadians(-90))))
-                .splineToLinearHeading(new Pose2d(5, 53, Math.toRadians(-15)), Math.toRadians(90))
+                .splineToLinearHeading(new Pose2d(5, 53, Math.toRadians(-20)), Math.toRadians(90))
                 .build();
         Action moveFromSecondShot = (drive.actionBuilder(new Pose2d(5, 53, Math.toRadians(-90))))
-                .splineToLinearHeading(new Pose2d(25, 58, Math.toRadians(-15)), Math.toRadians(90))
+                .splineToLinearHeading(new Pose2d(25, 58, Math.toRadians(-25)), Math.toRadians(90))
                 .build();
         waitForStart();
         if (isStopRequested()) return;
@@ -171,7 +174,7 @@ public class blueAutoRoadrunner extends LinearOpMode {
                         ),
                         //intake.new stopShooter()
                         moveToSecondShot,
-                        //intake.new readyBalls(),
+                        intake.new readyBalls(),
                         new ParallelAction(
                                 shooter.new Shoot(),
                                 intake.new PushBalls()
