@@ -67,7 +67,7 @@ public class blueAutoRoadrunner extends LinearOpMode {
             private long startTime = -1;
             public boolean run(@NonNull TelemetryPacket packet){
                 if (startTime < 0) startTime = System.currentTimeMillis();
-                if (launcher1.getVelocity()>1400 && launcher2.getVelocity()>900){
+                if ((launcher1.getVelocity()>1400 && launcher2.getVelocity()>900) && (launcher1.getVelocity()<1460 && launcher2.getVelocity()<960)){
                     intake1.setPower(-0.5);
                     intake2.setPower(-0.25);
                     pusherWheel.setPower(-1.0);
@@ -127,11 +127,11 @@ public class blueAutoRoadrunner extends LinearOpMode {
                 .splineToLinearHeading(new Pose2d(5, 58, Math.toRadians(15)), Math.toRadians(90))
                 .build();
         Action moveToPickupOne = (drive.actionBuilder(new Pose2d(5, 58, Math.toRadians(15))))
-                .splineToLinearHeading(new Pose2d(22, 59, Math.toRadians(-60)), Math.toRadians(90))
+                .splineToLinearHeading(new Pose2d(20, 55, Math.toRadians(-60)), Math.toRadians(90))
                 .build();
-        Action PickUpOne = (drive.actionBuilder(new Pose2d(22, 59, Math.toRadians(-60))))
+        Action PickUpOne = (drive.actionBuilder(new Pose2d(20, 55, Math.toRadians(-60))))
                 .splineToLinearHeading(
-                        new Pose2d(22, 77, Math.toRadians(-90)),
+                        new Pose2d(20, 77, Math.toRadians(-90)),
                         Math.toRadians(90),
                         new MinVelConstraint(Arrays.asList(
                                 new TranslationalVelConstraint(MecanumDrive.PARAMS.maxWheelVel * 0.25),
@@ -143,8 +143,8 @@ public class blueAutoRoadrunner extends LinearOpMode {
                         )
                 )
                 .build();
-        Action moveToSecondShot = (drive.actionBuilder(new Pose2d(22, 77, Math.toRadians(-90))))
-                .splineToLinearHeading(new Pose2d(5, 53, Math.toRadians(-20)), Math.toRadians(90))
+        Action moveToSecondShot = (drive.actionBuilder(new Pose2d(20, 77, Math.toRadians(-90))))
+                .splineToLinearHeading(new Pose2d(5, 58, Math.toRadians(-20)), Math.toRadians(90))
                 .build();
         Action moveFromSecondShot = (drive.actionBuilder(new Pose2d(5, 53, Math.toRadians(-90))))
                 .splineToLinearHeading(new Pose2d(25, 58, Math.toRadians(-25)), Math.toRadians(90))

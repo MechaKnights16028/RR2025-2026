@@ -7,6 +7,7 @@ import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.SequentialAction;
+import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -17,7 +18,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 
 @Autonomous
-public class BlueAutoClose extends LinearOpMode {
+public class CloseAutoStrafe extends LinearOpMode {
 
     public class Shooter{
         private DcMotorEx launcher1;
@@ -35,8 +36,8 @@ public class BlueAutoClose extends LinearOpMode {
             private long startTime = -1;
             public boolean run(@NonNull TelemetryPacket packet) {
                 if (startTime < 0) startTime = System.currentTimeMillis();
-                launcher1.setVelocity(1500.0);
-                launcher2.setVelocity(750.0);
+                launcher1.setVelocity(1450.0);
+                launcher2.setVelocity(950.0);
                 return System.currentTimeMillis() - startTime < 15000;
             }
         }
@@ -60,9 +61,9 @@ public class BlueAutoClose extends LinearOpMode {
             private long startTime = -1;
             public boolean run(@NonNull TelemetryPacket packet){
                 if (startTime < 0) startTime = System.currentTimeMillis();
-                if (launcher1.getVelocity()>1445 && launcher2.getVelocity()>745){
-                    intake1.setPower(-1.0);
-                    intake2.setPower(-0.5);
+                if (launcher1.getVelocity()>1445 && launcher2.getVelocity()>945){
+                    intake1.setPower(-0.5);
+                    intake2.setPower(-0.25);
                     pusherWheel.setPower(-1.0);
                 }
                 return System.currentTimeMillis() - startTime < 15000;
@@ -79,42 +80,20 @@ public class BlueAutoClose extends LinearOpMode {
         drive.leftBack.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         drive.rightFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         drive.rightBack.setMode(DcMotor.RunMode.RUN_USING_ENCODER);*/
-        Action moveOutOfStart = (drive.actionBuilder(initialPose))
-                .lineToY(80)
-                .build();
         waitForStart();
         if (isStopRequested()) return;
         PID_Tune tuner1 = new PID_Tune();
         PID_Tune2 tuner2 = new PID_Tune2();
         Shooter shooter = new Shooter(hardwareMap, tuner1, tuner2);
         Intake intake = new Intake(hardwareMap);
-        drive.leftBack.setPower(-1.0);
-        drive.leftFront.setPower(-1.0);
-        drive.rightBack.setPower(-1.0);
-        drive.rightFront.setPower(-1.0);
-        sleep(750);
+        drive.leftBack.setPower(1.0);
+        drive.leftFront.setPower(1.0);
+        drive.rightBack.setPower(1.0);
+        drive.rightFront.setPower(1.0);
+        sleep(300);
         drive.leftBack.setPower(0.0);
         drive.leftFront.setPower(0.0);
         drive.rightBack.setPower(0.0);
         drive.rightFront.setPower(0.0);
-        Actions.runBlocking(
-                new SequentialAction(
-                        new ParallelAction(
-                                shooter.new Shoot(),
-                                intake.new IntakeBalls()
-                        ),
-                        moveOutOfStart
-                )
-
-        );
-        /*drive.leftBack.setPower(-1.0);
-        drive.leftFront.setPower(1.0);
-        drive.rightBack.setPower(1.0);
-        drive.rightFront.setPower(-1.0);
-        sleep(750);
-        drive.leftBack.setPower(0.0);
-        drive.leftFront.setPower(0.0);
-        drive.rightBack.setPower(0.0);
-        drive.rightFront.setPower(0.0);*/
     }
 }

@@ -114,7 +114,7 @@ public class redAutoRoadrunner extends LinearOpMode {
                 .splineToLinearHeading(new Pose2d(22, 27, Math.toRadians(62)), Math.toRadians(90))
                 .build();
         Action moveToSecondShot = (drive.actionBuilder(new Pose2d(22, 27, Math.toRadians(62))))
-                .splineToLinearHeading(new Pose2d(2, 50, Math.toRadians(15)), Math.toRadians(90))
+                .splineToLinearHeading(new Pose2d(0, 50, Math.toRadians(15)), Math.toRadians(90))
                 .build();
         Action moveFromSecondShot = (drive.actionBuilder(new Pose2d(3, 48, Math.toRadians(15))))
                 .splineToLinearHeading(new Pose2d(25, 40, Math.toRadians(15)), Math.toRadians(90))
